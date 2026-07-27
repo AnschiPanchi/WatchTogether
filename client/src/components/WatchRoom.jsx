@@ -145,6 +145,25 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
     });
   };
 
+  const shareToWhatsApp = () => {
+    const text = `Hey! Join my WatchParty room to watch YouTube together in real-time!\n\nRoom Code: *${initial.roomId}*\nJoin link: ${window.location.origin}`;
+    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+  };
+
+  const shareNative = () => {
+    const text = `Join my WatchParty room! Room Code: ${initial.roomId}`;
+    if (navigator.share) {
+      navigator.share({
+        title: 'WatchParty Room',
+        text: text,
+        url: window.location.origin,
+      }).catch(() => {});
+    } else {
+      copyRoomCode();
+      showToast('Link & Code copied to clipboard!');
+    }
+  };
+
   // ── Dragging State ────────────────────────────────────────────
   const [panelPos, setPanelPos] = useState({ x: 144, y: 150 });
   const [isDragging, setIsDragging] = useState(false);
@@ -190,7 +209,6 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
       {/* ── Full-screen video world ───────── */}
       <div className="game-world">
         <YouTubePlayer
-          key={`${myRole}-${canControl}`}
           syncState={syncState}
           canControl={canControl}
           myUserId={socket.id || ''}
@@ -207,7 +225,11 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
         <header className="hud-top">
           {/* Logo */}
           <div className="hud-logo">
-            <div className="hud-logo-icon" aria-hidden="true">▶</div>
+            <div className="hud-logo-icon" aria-hidden="true">
+              <svg className="play-icon-svg" viewBox="0 0 24 24" fill="currentColor" width="18" height="18">
+                <path d="M8 5v14l11-7z" />
+              </svg>
+            </div>
             <span className="hud-logo-text">WatchParty</span>
           </div>
 
@@ -217,6 +239,12 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
             <span className="hrc-code" id="room-code-display">{initial.roomId}</span>
             <button id="copy-code-btn" className="hrc-copy" onClick={copyRoomCode} title="Copy code">
               {copied ? '✓' : '⎘'}
+            </button>
+            <button id="share-wa-btn" className="hrc-copy wa-share-btn" onClick={shareToWhatsApp} title="Share to WhatsApp">
+              💬
+            </button>
+            <button id="share-native-btn" className="hrc-copy share-icon-btn" onClick={shareNative} title="Share room link">
+              🔗
             </button>
           </div>
 

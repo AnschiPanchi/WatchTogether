@@ -87,6 +87,8 @@ export default function YouTubePlayer({
   }, [syncState, applySync]);
 
   useEffect(() => {
+    if (!syncState.videoId) return;
+
     let checkInterval = null;
 
     const initPlayer = () => {
@@ -117,6 +119,7 @@ export default function YouTubePlayer({
 
             if (event.data === window.YT.PlayerState.PLAYING) {
               if (canControl) {
+                suppress(1200);
                 onPlay();
               } else {
                 suppress();
@@ -127,6 +130,7 @@ export default function YouTubePlayer({
               }
             } else if (event.data === window.YT.PlayerState.PAUSED) {
               if (canControl && playerRef.current) {
+                suppress(1200);
                 onPause(playerRef.current.getCurrentTime());
               } else {
                 suppress();
@@ -160,12 +164,25 @@ export default function YouTubePlayer({
 
     return () => {
       if (checkInterval) clearInterval(checkInterval);
-      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
-        playerRef.current.destroy();
-        playerRef.current = null;
-      }
     };
-  }, []);
+  }, [syncState.videoId]);
+
+  if (!syncState.videoId) {
+    return (
+      <div className="empty-video-box">
+        <div className="animated-border-glow" />
+        <div className="empty-box-content">
+          <div className="empty-box-icon">🎬</div>
+          <h3 className="empty-box-title">No Video Loaded Yet</h3>
+          <p className="empty-box-desc">
+            {canControl
+              ? 'Click "Videos" in the left HUD menu to select or paste a YouTube video!'
+              : 'Waiting for the Host or Moderator to select a video…'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="yt-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>

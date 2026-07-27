@@ -72,7 +72,7 @@ export default function VideoSearch({ onSelect, onClose, canControl }) {
             <div className="search-input-row">
               <input
                 id="video-url-input"
-                className="input-field"
+                className="search-modal-input"
                 type="text"
                 placeholder="Paste a YouTube URL or video ID…"
                 value={input}
@@ -80,7 +80,7 @@ export default function VideoSearch({ onSelect, onClose, canControl }) {
                 onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
                 autoFocus
               />
-              <button id="load-video-btn" className="cta-btn compact" onClick={handleLoad}>
+              <button id="load-video-btn" className="search-modal-btn" onClick={handleLoad}>
                 Load
               </button>
             </div>

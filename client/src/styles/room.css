@@ -785,3 +785,65 @@
   position: fixed;
   inset: 0;
 }
+
+/* ── Empty Video Box with Animated Glowing Border ────────────────── */
+.empty-video-box {
+  position: absolute;
+  top: 10%;
+  bottom: 10%;
+  left: 10%;
+  right: 10%;
+  border-radius: var(--radius-xl);
+  background: radial-gradient(ellipse at 50% 50%, #0d2818 0%, #04140b 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 30px rgba(48, 216, 112, 0.2);
+  overflow: hidden;
+  border: 2px solid transparent;
+  z-index: 10;
+}
+
+.animated-border-glow {
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  padding: 4px;
+  background: linear-gradient(var(--angle, 0deg), #ffd060, #30d870, #3cb8f0, #ffd060);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-glow-rotate 6s linear infinite;
+  pointer-events: none;
+}
+
+.empty-box-content {
+  position: relative;
+  z-index: 3;
+  text-align: center;
+  max-width: 480px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.empty-box-icon {
+  font-size: 48px;
+  filter: drop-shadow(0 0 16px rgba(244, 168, 32, 0.6));
+  animation: float-gentle 3s ease-in-out infinite;
+}
+
+.empty-box-title {
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 26px;
+  color: var(--color-gold);
+  text-shadow: 0 0 12px rgba(244, 168, 32, 0.5);
+}
+
+.empty-box-desc {
+  font-size: 14px;
+  color: var(--color-text-dim);
+  line-height: 1.5;
+}
