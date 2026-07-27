@@ -508,24 +508,190 @@
   pointer-events: auto;
 }
 
-/* ── Responsive ──────────────── */
-@media (max-width: 800px) {
+/* ── Mobile Responsive ─────────────────── */
+@media (max-width: 768px) {
+  .hud-top {
+    padding: 8px 12px;
+  }
+  .hud-logo-icon {
+    width: 26px;
+    height: 26px;
+    font-size: 12px;
+  }
+  .hud-logo-text {
+    font-size: 15px;
+  }
+  .hrc-label {
+    font-size: 9px;
+    padding: 0 6px;
+  }
+  .hrc-code {
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 0 8px;
+  }
+  .hrc-copy {
+    padding: 0 6px;
+    font-size: 12px;
+  }
+  .hud-action-btn {
+    padding: 4px 10px;
+    font-size: 12px;
+  }
+  .hab-label {
+    display: none;
+  }
+
+  /* Bottom nav bar layout on mobile */
+  .hud-left-wrapper {
+    left: 50%;
+    top: auto;
+    bottom: 16px;
+    transform: translateX(-50%);
+    flex-direction: row;
+    align-items: center;
+  }
   .hud-left-nav {
     flex-direction: row;
-    bottom: 24px;
-    top: auto;
-    left: 50%;
-    transform: translateX(-50%);
+    gap: 8px;
   }
+  .nav-tile {
+    width: 52px;
+    height: 52px;
+  }
+  .nav-tile-icon {
+    font-size: 20px;
+  }
+  .nav-tile-label {
+    font-size: 9px;
+  }
+  .nav-divider {
+    width: 2px;
+    height: 32px;
+    margin: 0 2px;
+  }
+  .nav-role-chip {
+    padding: 4px 6px;
+    font-size: 9px;
+  }
+
+  /* Right info panel docked top-right on mobile */
+  .hud-right-wrapper {
+    right: 12px;
+    top: 56px;
+  }
+  .hud-right-panel {
+    width: 200px;
+    max-height: 55vh;
+    overflow-y: auto;
+  }
+  .hud-user-card {
+    padding: 8px;
+  }
+  .huc-avatar {
+    width: 30px;
+    height: 30px;
+    font-size: 14px;
+  }
+  .huc-name {
+    font-size: 12px;
+  }
+
+  /* Floating chat panel on mobile */
   .hud-float-panel {
-    left: 24px;
-    right: 24px;
-    bottom: 120px;
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 84px;
     top: auto;
     transform: none;
     width: auto;
+    height: 45vh;
+    min-height: 240px;
+    z-index: 100;
   }
-  .hud-right-panel {
+
+  .unmute-banner {
+    width: 90%;
+    text-align: center;
+    font-size: 13px;
+    padding: 10px 16px;
+  }
+}
+
+/* ── Landscape & Fullscreen Rules for Mobile ─────────────────── */
+@media (max-height: 520px) and (orientation: landscape) {
+  .game-room {
+    position: fixed;
+    inset: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+  }
+
+  .game-world,
+  .yt-wrapper,
+  .yt-player-container {
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  .hud-top {
+    padding: 4px 10px;
+    background: linear-gradient(180deg, rgba(0,5,20,0.85) 0%, transparent 100%);
+  }
+
+  .hud-logo-text {
     display: none;
   }
+
+  .hud-room-code {
+    padding: 2px 6px;
+  }
+
+  .hud-left-wrapper {
+    left: 8px;
+    top: 50%;
+    bottom: auto;
+    transform: translateY(-50%);
+    flex-direction: column;
+    scale: 0.85;
+  }
+
+  .hud-left-nav {
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .hud-right-wrapper {
+    right: 8px;
+    top: 44px;
+    scale: 0.85;
+  }
+
+  .hud-right-panel {
+    width: 180px;
+    max-height: 70vh;
+  }
+
+  .hud-float-panel {
+    position: fixed;
+    left: 70px;
+    right: auto;
+    top: 44px;
+    bottom: 12px;
+    width: 300px;
+    height: auto;
+    min-height: 0;
+    max-height: calc(100vh - 54px);
+    z-index: 100;
+  }
+}
+
+:fullscreen .game-room,
+:-webkit-full-screen .game-room {
+  width: 100vw;
+  height: 100vh;
+  position: fixed;
+  inset: 0;
 }

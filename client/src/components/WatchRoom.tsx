@@ -121,6 +121,28 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
   const handleTransferHost = (uid: string) => socket.emit('transfer_host', { userId: uid });
   const handleSendChat = (msg: string) => socket.emit('chat_message', { message: msg });
 
+  const [isFullscreen, setIsFullscreen] = useState(false);
+
+  const toggleFullscreen = () => {
+    if (!document.fullscreenElement) {
+      document.documentElement.requestFullscreen().then(() => {
+        setIsFullscreen(true);
+        if (window.screen?.orientation && 'lock' in window.screen.orientation) {
+          (window.screen.orientation as any).lock('landscape').catch(() => {});
+        }
+      }).catch(() => {});
+    } else {
+      if (document.exitFullscreen) {
+        document.exitFullscreen().then(() => {
+          setIsFullscreen(false);
+          if (window.screen?.orientation && 'unlock' in window.screen.orientation) {
+            window.screen.orientation.unlock();
+          }
+        }).catch(() => {});
+      }
+    }
+  };
+
   const copyRoomCode = () => {
     navigator.clipboard.writeText(initial.roomId).then(() => {
       setCopied(true);
@@ -205,6 +227,11 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
 
           {/* Top-right actions */}
           <div className="hud-top-actions">
+            <button id="fullscreen-btn" className="hud-action-btn" onClick={toggleFullscreen} title="Toggle Fullscreen">
+              <span>{isFullscreen ? '⤓' : '⛶'}</span>
+              <span className="hab-label">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
+            </button>
+
             <button id="leave-room-btn" className="hud-action-btn danger" onClick={handleLeave} title="Leave Room">
               <span>🚪</span>
               <span className="hab-label">Leave</span>

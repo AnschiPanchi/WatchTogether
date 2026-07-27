@@ -410,3 +410,24 @@
   font-size: 12px; font-weight: 700; padding: 0 8px; font-family: 'Nunito', sans-serif;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-align: left;
 }
+
+/* ── Mobile Responsive ─────────────────── */
+@media (max-width: 600px) {
+  .search-modal {
+    padding: 16px;
+    width: 94%;
+    gap: 12px;
+  }
+  .search-input-row {
+    flex-direction: column;
+  }
+  .cta-btn.compact {
+    width: 100%;
+    height: 40px;
+  }
+  .suggestions-grid {
+    grid-template-columns: 1fr;
+    max-height: 220px;
+    overflow-y: auto;
+  }
+}

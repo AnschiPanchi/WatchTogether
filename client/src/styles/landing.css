@@ -305,3 +305,35 @@
   text-align: center;
   font-weight: 600;
 }
+
+/* ── Mobile Responsive ─────────────────── */
+@media (max-width: 600px) {
+  .landing-card {
+    width: 95vw;
+  }
+  .landing-card-inner {
+    padding: 20px 16px 18px;
+  }
+  .landing-logo {
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .logo-icon-wrap {
+    width: 44px;
+    height: 44px;
+  }
+  .logo-title {
+    font-size: 24px;
+  }
+  .logo-sub {
+    font-size: 11px;
+  }
+  .tab-btn {
+    font-size: 13px;
+    padding: 8px 6px;
+  }
+  .cta-btn {
+    font-size: 16px;
+    padding: 12px;
+  }
+}
