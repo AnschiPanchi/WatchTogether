@@ -1,13 +1,12 @@
 import { useState, useCallback } from 'react';
 import LandingPage from './components/LandingPage';
 import WatchRoom from './components/WatchRoom';
-import type { RoomState } from './types';
 import './index.css';
 
 export default function App() {
-  const [roomState, setRoomState] = useState<RoomState | null>(null);
+  const [roomState, setRoomState] = useState(null);
 
-  const handleJoined = useCallback((state: RoomState) => {
+  const handleJoined = useCallback((state) => {
     setRoomState(state);
   }, []);
 
@@ -25,5 +24,3 @@ export default function App() {
     </>
   );
 }
-
-

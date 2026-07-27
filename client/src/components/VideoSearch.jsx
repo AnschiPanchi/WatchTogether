@@ -13,19 +13,13 @@
 
 import { useState } from 'react';
 
-interface Props {
-  onSelect:   (videoId: string) => void;
-  onClose:    () => void;
-  canControl: boolean;
-}
-
 /**
  * Extracts a YouTube video ID from various input formats:
  *   - https://www.youtube.com/watch?v=dQw4w9WgXcQ
  *   - https://youtu.be/dQw4w9WgXcQ
  *   - dQw4w9WgXcQ  (raw ID — always 11 chars)
  */
-function extractVideoId(input: string): string | null {
+function extractVideoId(input) {
   const s = input.trim();
   try {
     const url = new URL(s);
@@ -50,7 +44,7 @@ const QUICK_PICKS = [
   { id: 'fJ9rUzIMcZQ', title: 'Queen – Bohemian Rhapsody' },
 ];
 
-export default function VideoSearch({ onSelect, onClose, canControl }: Props) {
+export default function VideoSearch({ onSelect, onClose, canControl }) {
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
 

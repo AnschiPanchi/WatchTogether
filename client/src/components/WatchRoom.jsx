@@ -10,63 +10,57 @@
  */
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { getSocket } from '../socket';
-import type { RoomState, ParticipantInfo, SyncState, ChatMessage, Role } from '../types';
+import { getSocket } from '../services/socket';
 import YouTubePlayer from './YouTubePlayer';
 import ParticipantList from './ParticipantList';
 import ChatPanel from './ChatPanel';
 import VideoSearch from './VideoSearch';
 
-interface Props {
-  roomState: RoomState;
-  onLeave: () => void;
-}
-
-export default function WatchRoom({ roomState: initial, onLeave }: Props) {
+export default function WatchRoom({ roomState: initial, onLeave }) {
   const socket = getSocket();
 
   // ── Room state ────────────────────────────────────────────────
-  const [participants, setParticipants] = useState<ParticipantInfo[]>(initial.participants);
-  const [myRole, setMyRole] = useState<Role>(initial.role);
-  const [syncState, setSyncState] = useState<SyncState>(initial.syncState);
-  const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initial.chatHistory || []);
+  const [participants, setParticipants] = useState(initial.participants);
+  const [myRole, setMyRole] = useState(initial.role);
+  const [syncState, setSyncState] = useState(initial.syncState);
+  const [chatMessages, setChatMessages] = useState(initial.chatHistory || []);
 
   const [showLeftNav, setShowLeftNav] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
-  const [mobileTab, setMobileTab] = useState<'chat' | 'players' | 'video'>('chat');
+  const [mobileTab, setMobileTab] = useState('chat');
 
   // ── HUD panel visibility ──────────────────────────────────────
   // Only one panel can be "open" at a time (like a game menu)
-  const [activePanel, setActivePanel] = useState<'people' | 'chat' | 'video' | null>('chat');
+  const [activePanel, setActivePanel] = useState('chat');
   const [toast, setToast] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const togglePanel = (panel: 'people' | 'chat' | 'video') =>
+  const togglePanel = (panel) =>
     setActivePanel(prev => prev === panel ? null : panel);
 
-  const showToast = useCallback((msg: string) => {
+  const showToast = useCallback((msg) => {
     setToast(msg);
     setTimeout(() => setToast(''), 3000);
   }, []);
 
   // ── Socket events ─────────────────────────────────────────────
   useEffect(() => {
-    const onSyncState = (data: SyncState) => {
+    const onSyncState = (data) => {
       setSyncState(data);
     };
 
-    const onUserJoined = (data: { participants: ParticipantInfo[]; username: string }) => {
+    const onUserJoined = (data) => {
       setParticipants(data.participants);
       showToast(`${data.username} joined`);
     };
 
-    const onUserLeft = (data: { participants: ParticipantInfo[]; username: string; newHostId?: string }) => {
+    const onUserLeft = (data) => {
       setParticipants(data.participants);
       showToast(`${data.username} left`);
       if (data.newHostId === socket.id) { setMyRole('host'); showToast('👑 You are now the host!'); }
     };
 
-    const onRoleAssigned = (data: { userId: string; role: Role; participants: ParticipantInfo[] }) => {
+    const onRoleAssigned = (data) => {
       setParticipants(data.participants);
       const me = data.participants.find(p => p.userId === socket.id);
       if (me) {
@@ -77,10 +71,10 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
       }
     };
 
-    const onParticipantRemoved = (data: { participants: ParticipantInfo[] }) => setParticipants(data.participants);
+    const onParticipantRemoved = (data) => setParticipants(data.participants);
     const onRemovedFromRoom = () => { alert('You were removed from the room.'); onLeave(); };
-    const onChatMessage = (msg: ChatMessage) => setChatMessages(prev => [...prev.slice(-199), msg]);
-    const onErrorEvent = (data: { message?: string }) => {
+    const onChatMessage = (msg) => setChatMessages(prev => [...prev.slice(-199), msg]);
+    const onErrorEvent = (data) => {
       showToast(`🔒 ${data.message || 'Only Host or Moderator can perform this action.'}`);
     };
 
@@ -109,18 +103,18 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
   const canControl = myRole === 'host' || myRole === 'moderator';
 
   const handlePlay = () => socket.emit('play', {});
-  const handlePause = (t: number) => socket.emit('pause', { currentTime: t });
+  const handlePause = (t) => socket.emit('pause', { currentTime: t });
 
-  const handleChangeVideo = (videoId: string) => {
+  const handleChangeVideo = (videoId) => {
     socket.emit('change_video', { videoId });
     setActivePanel(null);
   };
 
   const handleLeave = () => { socket.emit('leave_room', { roomId: initial.roomId }); onLeave(); };
-  const handleAssignRole = (uid: string, role: string) => socket.emit('assign_role', { userId: uid, role });
-  const handleRemoveParticipant = (uid: string) => socket.emit('remove_participant', { userId: uid });
-  const handleTransferHost = (uid: string) => socket.emit('transfer_host', { userId: uid });
-  const handleSendChat = (msg: string) => socket.emit('chat_message', { message: msg });
+  const handleAssignRole = (uid, role) => socket.emit('assign_role', { userId: uid, role });
+  const handleRemoveParticipant = (uid) => socket.emit('remove_participant', { userId: uid });
+  const handleTransferHost = (uid) => socket.emit('transfer_host', { userId: uid });
+  const handleSendChat = (msg) => socket.emit('chat_message', { message: msg });
 
   const [isFullscreen, setIsFullscreen] = useState(false);
 
@@ -129,7 +123,7 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
       document.documentElement.requestFullscreen().then(() => {
         setIsFullscreen(true);
         if (window.screen?.orientation && 'lock' in window.screen.orientation) {
-          (window.screen.orientation as any).lock('landscape').catch(() => {});
+          window.screen.orientation.lock('landscape').catch(() => {});
         }
       }).catch(() => {});
     } else {
@@ -156,7 +150,7 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
   const [isDragging, setIsDragging] = useState(false);
   const dragRef = useRef({ startX: 0, startY: 0, startPosX: 0, startPosY: 0 });
 
-  const handlePointerDown = (e: React.PointerEvent) => {
+  const handlePointerDown = (e) => {
     setIsDragging(true);
     dragRef.current = {
       startX: e.clientX,
@@ -164,10 +158,10 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
       startPosX: panelPos.x,
       startPosY: panelPos.y,
     };
-    (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    e.target.setPointerCapture(e.pointerId);
   };
 
-  const handlePointerMove = (e: React.PointerEvent) => {
+  const handlePointerMove = (e) => {
     if (!isDragging) return;
     const dx = e.clientX - dragRef.current.startX;
     const dy = e.clientY - dragRef.current.startY;
@@ -177,16 +171,16 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
     });
   };
 
-  const handlePointerUp = (e: React.PointerEvent) => {
+  const handlePointerUp = (e) => {
     if (!isDragging) return;
     setIsDragging(false);
-    (e.target as HTMLElement).releasePointerCapture(e.pointerId);
+    e.target.releasePointerCapture(e.pointerId);
   };
 
   // ── Left nav tiles definition ─────────────────────────────────
   const navTiles = [
-    { id: 'video' as const, icon: '🎬', label: 'Videos', show: canControl, color: 'gold' },
-    { id: 'chat' as const, icon: '💬', label: 'Chat', show: true, color: 'orange' },
+    { id: 'video', icon: '🎬', label: 'Videos', show: canControl, color: 'gold' },
+    { id: 'chat', icon: '💬', label: 'Chat', show: true, color: 'orange' },
   ];
 
   // ── Render ────────────────────────────────────────────────────

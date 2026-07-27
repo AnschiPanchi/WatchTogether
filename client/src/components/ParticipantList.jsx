@@ -14,19 +14,9 @@
  */
 
 import { useState } from 'react';
-import type { ParticipantInfo, Role } from '../types';
-
-interface Props {
-  participants:         ParticipantInfo[];
-  myUserId:             string;
-  myRole:               Role;
-  onAssignRole:         (userId: string, role: string) => void;
-  onRemoveParticipant:  (userId: string) => void;
-  onTransferHost:       (userId: string) => void;
-}
 
 // Role metadata — icon + CSS class pairing keeps the render clean
-const ROLE_META: Record<Role, { icon: string; cls: string }> = {
+const ROLE_META = {
   host:        { icon: '👑', cls: 'role-host'        },
   moderator:   { icon: '🛡️', cls: 'role-mod'         },
   participant: { icon: '👤', cls: 'role-participant'  },
@@ -39,10 +29,10 @@ export default function ParticipantList({
   onAssignRole,
   onRemoveParticipant,
   onTransferHost,
-}: Props) {
-  const [openMenu, setOpenMenu] = useState<string | null>(null);
+}) {
+  const [openMenu, setOpenMenu] = useState(null);
 
-  const toggleMenu = (userId: string) => {
+  const toggleMenu = (userId) => {
     setOpenMenu(prev => prev === userId ? null : userId);
   };
 

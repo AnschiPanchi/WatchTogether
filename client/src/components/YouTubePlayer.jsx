@@ -1,21 +1,4 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
-import type { SyncState } from '../types';
-
-interface Props {
-  syncState: SyncState;
-  canControl: boolean;
-  myUserId: string;
-  onPlay: () => void;
-  onPause: (currentTime: number) => void;
-  onPermissionDenied?: (message: string) => void;
-}
-
-declare global {
-  interface Window {
-    YT: any;
-    onYouTubeIframeAPIReady: (() => void) | undefined;
-  }
-}
 
 export default function YouTubePlayer({
   syncState,
@@ -23,12 +6,12 @@ export default function YouTubePlayer({
   onPlay,
   onPause,
   onPermissionDenied,
-}: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<any>(null);
-  const suppressUntilRef = useRef<number>(0);
-  const isReadyRef = useRef<boolean>(false);
-  const currentVideoIdRef = useRef<string>(syncState.videoId);
+}) {
+  const containerRef = useRef(null);
+  const playerRef = useRef(null);
+  const suppressUntilRef = useRef(0);
+  const isReadyRef = useRef(false);
+  const currentVideoIdRef = useRef(syncState.videoId);
 
   const suppress = (ms = 800) => {
     suppressUntilRef.current = Date.now() + ms;
@@ -48,7 +31,7 @@ export default function YouTubePlayer({
   };
 
   // Handle remote sync changes
-  const applySync = useCallback((state: SyncState) => {
+  const applySync = useCallback((state) => {
     const player = playerRef.current;
     if (!player || !isReadyRef.current) return;
 
@@ -104,7 +87,7 @@ export default function YouTubePlayer({
   }, [syncState, applySync]);
 
   useEffect(() => {
-    let checkInterval: any = null;
+    let checkInterval = null;
 
     const initPlayer = () => {
       if (!containerRef.current || playerRef.current) return;
@@ -129,7 +112,7 @@ export default function YouTubePlayer({
               playerRef.current?.pauseVideo();
             }
           },
-          onStateChange: (event: any) => {
+          onStateChange: (event) => {
             if (isSuppressed()) return;
 
             if (event.data === window.YT.PlayerState.PLAYING) {

@@ -11,29 +11,21 @@
  */
 
 import { useState, useRef, useEffect } from 'react';
-import type { ChatMessage, Role } from '../types';
-
-interface Props {
-  messages:   ChatMessage[];
-  myUserId:   string;
-  myUsername: string;
-  onSend:     (message: string) => void;
-}
 
 // Maps roles to their indicator icon shown before the author name
-const ROLE_ICON: Record<Role, string> = {
+const ROLE_ICON = {
   host:        '👑',
   moderator:   '🛡️',
   participant: '',
 };
 
-function formatTime(ts: number): string {
+function formatTime(ts) {
   return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 }
 
-export default function ChatPanel({ messages, myUserId, onSend }: Props) {
+export default function ChatPanel({ messages, myUserId, onSend }) {
   const [input, setInput]   = useState('');
-  const bottomRef           = useRef<HTMLDivElement>(null);
+  const bottomRef           = useRef(null);
 
   // Scroll to bottom whenever messages list grows
   useEffect(() => {

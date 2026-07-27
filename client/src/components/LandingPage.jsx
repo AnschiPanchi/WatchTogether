@@ -12,19 +12,14 @@
  */
 
 import { useState, useRef } from 'react';
-import { getSocket } from '../socket';
-import type { RoomState } from '../types';
+import { getSocket } from '../services/socket';
 
-interface Props {
-  onJoined: (state: RoomState) => void;
-}
-
-export default function LandingPage({ onJoined }: Props) {
+export default function LandingPage({ onJoined }) {
   const [username, setUsername] = useState('');
   const [roomCode, setRoomCode] = useState('');
-  const [tab, setTab]           = useState<'create' | 'join'>('create');
-  const [loading, setLoading]   = useState(false);
-  const [error, setError]       = useState('');
+  const [tab, setTab] = useState('create');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   // Hold the socket in a ref — we don't want re-renders from socket changes
   const socketRef = useRef(getSocket());
@@ -50,13 +45,13 @@ export default function LandingPage({ onJoined }: Props) {
       cleanup();
       setLoading(false);
       onJoined({
-        roomId:       data.roomId,
-        userId:       data.userId,
-        username:     name,
-        role:         data.role,
+        roomId: data.roomId,
+        userId: data.userId,
+        username: name,
+        role: data.role,
         participants: data.participants,
-        syncState:    data.syncState,
-        chatHistory:  data.chatHistory || [],
+        syncState: data.syncState,
+        chatHistory: data.chatHistory || [],
       });
     });
 
@@ -68,12 +63,12 @@ export default function LandingPage({ onJoined }: Props) {
 
     // If no roomId, server auto-creates a room and makes sender the host
     socket.emit('join_room', {
-      roomId:   tab === 'join' ? roomCode.trim().toUpperCase() : undefined,
+      roomId: tab === 'join' ? roomCode.trim().toUpperCase() : undefined,
       username: name,
     });
   };
 
-  const handleKey = (e: React.KeyboardEvent) => {
+  const handleKey = (e) => {
     if (e.key === 'Enter') handleSubmit();
   };
 
@@ -81,18 +76,18 @@ export default function LandingPage({ onJoined }: Props) {
     <div className="landing">
       {/* Rising bubbles — purely decorative, CSS-animated */}
       <div className="bg-bubbles" aria-hidden="true">
-        {[{s:18,l:8, dur:9, delay:0}, {s:10,l:18,dur:12,delay:2},{s:25,l:35,dur:7, delay:1},
-          {s:12,l:55,dur:14,delay:4},{s:20,l:70,dur:10,delay:0},{s:8, l:82,dur:8, delay:3},
-          {s:30,l:92,dur:11,delay:5},{s:14,l:48,dur:13,delay:1},{s:22,l:62,dur:9, delay:6}]
-          .map((b,i) => (
+        {[{ s: 18, l: 8, dur: 9, delay: 0 }, { s: 10, l: 18, dur: 12, delay: 2 }, { s: 25, l: 35, dur: 7, delay: 1 },
+        { s: 12, l: 55, dur: 14, delay: 4 }, { s: 20, l: 70, dur: 10, delay: 0 }, { s: 8, l: 82, dur: 8, delay: 3 },
+        { s: 30, l: 92, dur: 11, delay: 5 }, { s: 14, l: 48, dur: 13, delay: 1 }, { s: 22, l: 62, dur: 9, delay: 6 }]
+          .map((b, i) => (
             <div
               key={i}
               className="bubble"
               style={{
                 width: b.s, height: b.s,
                 left: `${b.l}%`,
-                ['--dur' as string]: `${b.dur}s`,
-                ['--delay' as string]: `${b.delay}s`,
+                '--dur': `${b.dur}s`,
+                '--delay': `${b.delay}s`,
               }}
             />
           ))}
@@ -185,8 +180,8 @@ export default function LandingPage({ onJoined }: Props) {
             {loading
               ? 'Connecting…'
               : tab === 'create'
-              ? '🚀 Create Room'
-              : '🔗 Join Room'}
+                ? '🚀 Create Room'
+                : '🔗 Join Room'}
           </button>
 
           <p className="landing-hint">
