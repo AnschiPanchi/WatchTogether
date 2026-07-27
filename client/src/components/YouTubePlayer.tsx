@@ -1,4 +1,4 @@
-import { useEffect, useRef, useCallback } from 'react';
+import { useEffect, useRef, useCallback, useState } from 'react';
 import type { SyncState } from '../types';
 
 // ─── YouTube IFrame API Loader (singleton) ────────────────────────────────────
@@ -35,24 +35,34 @@ interface Props {
   myUserId: string;
   onPlay: () => void;
   onPause: (currentTime: number) => void;
+  onSeek: (currentTime: number) => void;
+  onError?: (error: string) => void;
 }
 
 export default function YouTubePlayer({
   syncState,
   canControl,
+  myUserId,
   onPlay,
   onPause,
+  onSeek,
+  onError,
 }: Props) {
-  const containerRef = useRef<HTMLDivElement>(null);
+  const playerMountRef = useRef<HTMLDivElement>(null);
   const playerRef = useRef<YT.Player | null>(null);
   const syncStateRef = useRef(syncState);
   const lastVideoIdRef = useRef('');
   const suppressUntilRef = useRef<number>(0);
+  const lastSyncedTimeRef = useRef<number>(syncState.currentTime);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isReady, setIsReady] = useState(false);
 
   const isSuppressed = () => Date.now() < suppressUntilRef.current;
   const suppress = (ms = 700) => { suppressUntilRef.current = Date.now() + ms; };
 
   syncStateRef.current = syncState;
+  lastSyncedTimeRef.current = syncState.currentTime;
 
   // ─── Init Player ────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -65,9 +75,8 @@ export default function YouTubePlayer({
     targetDiv.style.width = '100%';
     targetDiv.style.height = '100%';
     
-    if (containerRef.current) {
-      containerRef.current.innerHTML = ''; // clear any orphaned iframes
-      containerRef.current.appendChild(targetDiv);
+    if (playerMountRef.current) {
+      playerMountRef.current.replaceChildren(targetDiv);
     }
 
     loadYTApi().then(() => {
@@ -87,12 +96,16 @@ export default function YouTubePlayer({
           rel: 0,
           fs: 1,
           playsinline: 1,
-          autoplay: 0,
+          autoplay: syncStateRef.current.playState === 'playing' ? 1 : 0,
+          origin: window.location.origin,
         },
         events: {
           onReady: (e) => {
             if (!isMounted) return;
+            console.log('[DEBUG YT] Player ready for video:', syncStateRef.current.videoId);
             lastVideoIdRef.current = syncStateRef.current.videoId;
+            setIsReady(true);
+            setIsLoading(false);
             suppress(1000);
             e.target.seekTo(syncStateRef.current.currentTime, true);
             if (syncStateRef.current.playState === 'playing') {
@@ -113,6 +126,17 @@ export default function YouTubePlayer({
           },
           onError: (e) => {
             console.error('[YT Player Error code]', e.data);
+            const errorMessages: Record<number, string> = {
+              2: 'Invalid video ID',
+              5: 'HTML5 player error',
+              100: 'Video not found',
+              101: 'Video not embeddable',
+              150: 'Video not embeddable',
+            };
+            const errorMsg = errorMessages[e.data] || `Unknown error (${e.data})`;
+            setError(errorMsg);
+            setIsLoading(false);
+            onError?.(errorMsg);
           },
         },
       });
@@ -124,16 +148,32 @@ export default function YouTubePlayer({
         try { playerRef.current.destroy(); } catch (err) {}
         playerRef.current = null;
       }
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
+      if (playerMountRef.current) {
+        playerMountRef.current.replaceChildren();
       }
     };
-  }, [canControl]); // re-run if canControl changes so controls update
+  }, []); // only run once on mount
+
+  useEffect(() => {
+    const player = playerRef.current;
+    if (!player || !isReady) return;
+
+    const currentTime = player.getCurrentTime?.() ?? 0;
+    const timeDelta = Math.abs(currentTime - lastSyncedTimeRef.current);
+    const isUserDrivenSeek = timeDelta > 2;
+
+    if (canControl && syncState.triggeredBy === myUserId && isUserDrivenSeek) {
+      onSeek(currentTime);
+    }
+  }, [canControl, isReady, myUserId, onSeek, syncState]);
 
   // ─── Apply Remote Sync ───────────────────────────────────────────────────────
   const applySync = useCallback((state: SyncState) => {
     const player = playerRef.current;
-    if (!player || typeof player.getPlayerState !== 'function') return;
+    if (!player || typeof player.getPlayerState !== 'function' || !isReady) {
+      console.log('[DEBUG YT] Player not ready, skipping sync');
+      return;
+    }
 
     suppress();
 
@@ -169,7 +209,30 @@ export default function YouTubePlayer({
   // ─── Render ──────────────────────────────────────────────────────────────────
   return (
     <div className="yt-wrapper">
-      <div className="yt-player-container" ref={containerRef} style={{ width: '100%', height: '100%' }}>
+      <div className="yt-player-container" style={{ width: '100%', height: '100%' }}>
+        <div ref={playerMountRef} style={{ width: '100%', height: '100%' }} />
+        {isLoading && (
+          <div className="video-loading-overlay">
+            <div className="loading-spinner"></div>
+            <span>Loading video...</span>
+          </div>
+        )}
+        {error && (
+          <div className="video-error-overlay">
+            <span className="error-icon">⚠️</span>
+            <span className="error-message">{error}</span>
+            <button
+              className="retry-btn"
+              onClick={() => {
+                setError(null);
+                setIsLoading(true);
+                window.location.reload();
+              }}
+            >
+              Retry
+            </button>
+          </div>
+        )}
       </div>
 
       {!canControl && (

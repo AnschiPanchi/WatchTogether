@@ -73,6 +73,9 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
     const onParticipantRemoved = (data: { participants: ParticipantInfo[] }) => setParticipants(data.participants);
     const onRemovedFromRoom = () => { alert('You were removed from the room.'); onLeave(); };
     const onChatMessage = (msg: ChatMessage) => setChatMessages(prev => [...prev.slice(-199), msg]);
+    const onErrorEvent = (data: { message?: string }) => {
+      showToast(data.message || 'Something went wrong.');
+    };
 
     socket.on('sync_state',          onSyncState);
     socket.on('user_joined',         onUserJoined);
@@ -81,6 +84,7 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
     socket.on('participant_removed', onParticipantRemoved);
     socket.on('removed_from_room',   onRemovedFromRoom);
     socket.on('chat_message',        onChatMessage);
+    socket.on('error_event',         onErrorEvent);
 
     return () => {
       socket.off('sync_state',          onSyncState);
@@ -90,6 +94,7 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
       socket.off('participant_removed', onParticipantRemoved);
       socket.off('removed_from_room',   onRemovedFromRoom);
       socket.off('chat_message',        onChatMessage);
+      socket.off('error_event',         onErrorEvent);
     };
   }, [socket, onLeave, showToast]);
 
@@ -98,6 +103,10 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
 
   const handlePlay  = ()    => socket.emit('play',  {});
   const handlePause = (t: number) => socket.emit('pause', { currentTime: t });
+  const handleSeek  = (t: number) => socket.emit('seek', { time: t });
+  const handleVideoError = (error: string) => {
+    showToast(`Video error: ${error}`);
+  };
 
   const handleChangeVideo = (videoId: string) => {
     socket.emit('change_video', { videoId });
@@ -186,6 +195,8 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
           myUserId={socket.id || ''}
           onPlay={handlePlay}
           onPause={handlePause}
+          onSeek={handleSeek}
+          onError={handleVideoError}
         />
       </div>
 

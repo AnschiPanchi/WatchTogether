@@ -19,7 +19,7 @@ class Room {
     /** @type {{ videoId: string, playState: 'playing'|'paused', currentTime: number, lastUpdatedAt: number }} */
     this.videoState = {
       videoId: 'dQw4w9WgXcQ', // default video
-      playState: 'paused',
+      playState: 'playing',
       currentTime: 0,
       lastUpdatedAt: Date.now(),
     };
