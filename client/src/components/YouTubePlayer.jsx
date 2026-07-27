@@ -19,6 +19,11 @@ export default function YouTubePlayer({
 
   const isSuppressed = () => Date.now() < suppressUntilRef.current;
 
+  const canControlRef = useRef(canControl);
+  useEffect(() => {
+    canControlRef.current = canControl;
+  }, [canControl]);
+
   const [needsUnmute, setNeedsUnmute] = useState(false);
 
   const handleUnmute = () => {
@@ -47,10 +52,10 @@ export default function YouTubePlayer({
       return;
     }
 
-    // Drift check (> 2.0s) to prevent playback flickering
+    // Ultra-fast drift check (> 0.75s) to keep all participants strictly in sync
     const currentTime = typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : 0;
-    if (Math.abs(currentTime - state.currentTime) > 2.0) {
-      suppress(1000);
+    if (Math.abs(currentTime - state.currentTime) > 0.75) {
+      suppress(800);
       if (typeof player.seekTo === 'function') {
         player.seekTo(state.currentTime, true);
       }
@@ -118,7 +123,7 @@ export default function YouTubePlayer({
             if (isSuppressed()) return;
 
             if (event.data === window.YT.PlayerState.PLAYING) {
-              if (canControl) {
+              if (canControlRef.current) {
                 suppress(1200);
                 onPlay();
               } else {
@@ -129,7 +134,7 @@ export default function YouTubePlayer({
                 onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
               }
             } else if (event.data === window.YT.PlayerState.PAUSED) {
-              if (canControl && playerRef.current) {
+              if (canControlRef.current && playerRef.current) {
                 suppress(1200);
                 onPause(playerRef.current.getCurrentTime());
               } else {
@@ -165,7 +170,7 @@ export default function YouTubePlayer({
     return () => {
       if (checkInterval) clearInterval(checkInterval);
     };
-  }, [syncState.videoId]);
+  }, [syncState.videoId, canControl]);
 
   if (!syncState.videoId) {
     return (

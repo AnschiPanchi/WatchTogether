@@ -30,8 +30,8 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
   const [mobileTab, setMobileTab] = useState('chat');
 
   // ── HUD panel visibility ──────────────────────────────────────
-  // Only one panel can be "open" at a time (like a game menu)
-  const [activePanel, setActivePanel] = useState('chat');
+  // Closed by default when entering the room; opens when clicked
+  const [activePanel, setActivePanel] = useState(null);
   const [toast, setToast] = useState('');
   const [copied, setCopied] = useState(false);
 
@@ -138,29 +138,53 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
     }
   };
 
+  const [shareDropdown, setShareDropdown] = useState(false);
+
   const copyRoomCode = () => {
     navigator.clipboard.writeText(initial.roomId).then(() => {
       setCopied(true);
+      showToast('Room Code copied!');
       setTimeout(() => setCopied(false), 2000);
     });
   };
 
-  const shareToWhatsApp = () => {
-    const text = `Hey! Join my WatchParty room to watch YouTube together in real-time!\n\nRoom Code: *${initial.roomId}*\nJoin link: ${window.location.origin}`;
-    window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(text)}`, '_blank');
+  const shareToPlatform = (platform) => {
+    setShareDropdown(false);
+    const roomUrl = `${window.location.origin}/?room=${initial.roomId}`;
+    const shareText = `Join my WatchParty room to watch YouTube together in sync!\n\nRoom Code: ${initial.roomId}\nDirect Link: ${roomUrl}`;
+
+    if (platform === 'whatsapp') {
+      const waText = `Hey! Join my WatchParty room to watch YouTube together in real-time!\n\nRoom Code: *${initial.roomId}*\nClick to join directly: ${roomUrl}`;
+      window.open(`https://api.whatsapp.com/send?text=${encodeURIComponent(waText)}`, '_blank');
+    } else if (platform === 'telegram') {
+      window.open(`https://t.me/share/url?url=${encodeURIComponent(roomUrl)}&text=${encodeURIComponent(shareText)}`, '_blank');
+    } else if (platform === 'twitter') {
+      window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}`, '_blank');
+    } else if (platform === 'discord') {
+      navigator.clipboard.writeText(`${shareText}`).then(() => {
+        showToast('Invite copied! Opening Discord…');
+        window.open('https://discord.com/channels/@me', '_blank');
+      });
+    } else if (platform === 'copy') {
+      navigator.clipboard.writeText(roomUrl).then(() => {
+        showToast('Direct Room Link copied!');
+      });
+    }
   };
 
   const shareNative = () => {
+    const roomUrl = `${window.location.origin}/?room=${initial.roomId}`;
     const text = `Join my WatchParty room! Room Code: ${initial.roomId}`;
     if (navigator.share) {
       navigator.share({
         title: 'WatchParty Room',
         text: text,
-        url: window.location.origin,
+        url: roomUrl,
       }).catch(() => {});
     } else {
-      copyRoomCode();
-      showToast('Link & Code copied to clipboard!');
+      navigator.clipboard.writeText(roomUrl).then(() => {
+        showToast('Direct Room Link copied to clipboard!');
+      });
     }
   };
 
@@ -240,12 +264,42 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
             <button id="copy-code-btn" className="hrc-copy" onClick={copyRoomCode} title="Copy code">
               {copied ? '✓' : '⎘'}
             </button>
-            <button id="share-wa-btn" className="hrc-copy wa-share-btn" onClick={shareToWhatsApp} title="Share to WhatsApp">
-              💬
-            </button>
-            <button id="share-native-btn" className="hrc-copy share-icon-btn" onClick={shareNative} title="Share room link">
-              🔗
-            </button>
+
+            {/* Social Share Dropdown Container */}
+            <div className="share-dropdown-wrapper" style={{ position: 'relative' }}>
+              <button
+                id="share-dropdown-btn"
+                className="hrc-copy wa-share-btn"
+                onClick={() => setShareDropdown(!shareDropdown)}
+                title="Share Room to Social Media"
+              >
+                {/* Authentic Filled WhatsApp Brand Logo SVG */}
+                <svg width="22" height="22" viewBox="0 0 32 32" fill="none">
+                  <circle cx="16" cy="16" r="16" fill="#25D366" />
+                  <path fillRule="evenodd" clipRule="evenodd" d="M16 6.5C10.75 6.5 6.5 10.75 6.5 16C6.5 17.82 7.02 19.52 7.92 20.97L6.68 25.56L11.4 24.32C12.8 25.13 14.39 25.5 16 25.5C21.25 25.5 25.5 21.25 25.5 16C25.5 10.75 21.25 6.5 16 6.5ZM16 23.9C14.59 23.9 13.22 23.53 12.02 22.82L11.73 22.65L8.94 23.38L9.68 20.66L9.5 20.37C8.72 19.12 8.3 17.58 8.3 16C8.3 11.75 11.75 8.3 16 8.3C20.25 8.3 23.7 11.75 23.7 16C23.7 20.25 20.25 23.9 16 23.9ZM20.22 18.28C19.99 18.17 18.86 17.61 18.65 17.53C18.44 17.45 18.29 17.41 18.14 17.63C17.99 17.85 17.56 18.36 17.43 18.51C17.3 18.66 17.17 18.68 16.94 18.57C16.71 18.46 15.97 18.22 15.09 17.44C14.4 16.83 13.93 16.07 13.8 15.84C13.67 15.61 13.79 15.49 13.9 15.38C14 15.28 14.13 15.11 14.24 14.98C14.35 14.85 14.39 14.75 14.47 14.59C14.55 14.43 14.51 14.3 14.45 14.18C14.39 14.06 13.94 12.95 13.75 12.5C13.57 12.06 13.38 12.12 13.24 12.11C13.11 12.1 12.96 12.1 12.81 12.1C12.66 12.1 12.42 12.16 12.21 12.38C12 12.6 11.39 13.17 11.39 14.33C11.39 15.49 12.24 16.61 12.35 16.76C12.46 16.91 14.01 19.3 16.39 20.33C16.95 20.57 17.39 20.72 17.73 20.83C18.3 21.01 18.81 20.98 19.22 20.92C19.68 20.85 20.63 20.34 20.83 19.78C21.03 19.22 21.03 18.74 20.97 18.64C20.91 18.54 20.76 18.48 20.53 18.37L20.22 18.28Z" fill="white"/>
+                </svg>
+              </button>
+
+              {shareDropdown && (
+                <div className="share-dropdown-menu">
+                  <button className="share-menu-item" onClick={() => shareToPlatform('whatsapp')}>
+                    <span className="share-brand-icon" style={{ background: '#25D366' }}>💬</span> WhatsApp
+                  </button>
+                  <button className="share-menu-item" onClick={() => shareToPlatform('telegram')}>
+                    <span className="share-brand-icon" style={{ background: '#0088cc' }}>✈️</span> Telegram
+                  </button>
+                  <button className="share-menu-item" onClick={() => shareToPlatform('twitter')}>
+                    <span className="share-brand-icon" style={{ background: '#1DA1F2' }}>🐦</span> Twitter / X
+                  </button>
+                  <button className="share-menu-item" onClick={() => shareToPlatform('discord')}>
+                    <span className="share-brand-icon" style={{ background: '#5865F2' }}>🎮</span> Discord
+                  </button>
+                  <button className="share-menu-item" onClick={shareNative}>
+                    <span className="share-brand-icon" style={{ background: '#ffd060', color: '#000' }}>🔗</span> System Share
+                  </button>
+                </div>
+              )}
+            </div>
           </div>
 
           {/* Top-right actions */}

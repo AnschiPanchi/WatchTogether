@@ -1,35 +1,52 @@
-/* room.css — WatchRoom Game HUD Layout */
-
+/* ── Game Room Background ───────────── */
 .game-room {
   position: relative;
   width: 100%;
   height: 100%;
   flex: 1;
   overflow: hidden;
-  background: #000;
+  background: radial-gradient(ellipse at 50% 50%, #0d2818 0%, #05140d 60%, #030a06 100%);
   display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* ── Full-screen video world ───────── */
+/* ── Video Frame Container (Fixed Padded Frame with Animated Border) ───── */
 .game-world {
   position: absolute;
-  inset: 0;
+  top: 70px;
+  bottom: 30px;
+  left: 95px;
+  right: 320px;
   z-index: 1;
+  border-radius: 20px;
+  overflow: hidden;
+  background: #000;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.9), 0 0 35px rgba(48, 216, 112, 0.25);
+  border: 2px solid transparent;
 }
 
-/* Reset yt-wrapper to fill the entire screen, no borders */
+.game-world::before {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border-radius: 22px;
+  padding: 3px;
+  background: linear-gradient(var(--angle, 0deg), #ffd060, #30d870, #3cb8f0, #ffd060);
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  animation: border-glow-rotate 6s linear infinite;
+  pointer-events: none;
+  z-index: 10;
+}
+
+/* Reset yt-wrapper to fill the framed container */
 .game-world .yt-wrapper {
   width: 100%;
   height: 100%;
-  border-radius: 0;
-  border: none;
-  box-shadow: none;
-  min-height: unset;
-  aspect-ratio: unset;
-}
-.game-world .yt-wrapper::before,
-.game-world .yt-wrapper::after {
-  display: none;
+  border-radius: 18px;
+  overflow: hidden;
 }
 
 .yt-player-container {
@@ -179,45 +196,119 @@
 
 .hud-room-code {
   display: flex;
-  align-items: stretch;
-  background: rgba(5,15,40,0.85);
-  border: 2px solid rgba(40,130,220,0.5);
-  border-radius: var(--radius-md);
-  overflow: hidden;
-  box-shadow: var(--glow-blue);
+  align-items: center;
+  height: 42px;
+  background: linear-gradient(135deg, rgba(8, 28, 16, 0.95) 0%, rgba(4, 16, 10, 0.95) 100%);
+  border: 2px solid rgba(48, 216, 112, 0.5);
+  border-radius: 9999px;
+  overflow: visible;
+  box-shadow: 0 0 20px rgba(48, 216, 112, 0.3), 0 4px 14px rgba(0, 0, 0, 0.8);
+  padding: 2px;
 }
+
 .hrc-label {
-  padding: 0 10px;
-  background: rgba(20,80,160,0.5);
-  font-family: 'Fredoka One', cursive;
-  font-size: 11px;
-  letter-spacing: 1.5px;
-  color: var(--blue-300);
-  display: flex; align-items: center;
-  border-right: 1px solid rgba(40,130,220,0.4);
-}
-.hrc-code {
   padding: 0 14px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 15px;
-  font-weight: 700;
-  letter-spacing: 4px;
-  color: var(--gold-400);
-  text-shadow: 0 0 8px rgba(244,168,32,0.5);
-  display: flex; align-items: center;
+  height: 100%;
+  background: linear-gradient(135deg, rgba(48, 216, 112, 0.25) 0%, rgba(16, 184, 168, 0.25) 100%);
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 12px;
+  letter-spacing: 1.5px;
+  color: #30d870;
+  display: flex;
+  align-items: center;
+  border-radius: 9999px 0 0 9999px;
+  border-right: 1.5px solid rgba(48, 216, 112, 0.4);
 }
+
+.hrc-code {
+  padding: 0 16px;
+  height: 100%;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: 5px;
+  color: #ffd060;
+  text-shadow: 0 0 10px rgba(255, 208, 96, 0.6), 0 2px 4px rgba(0,0,0,0.8);
+  display: flex;
+  align-items: center;
+}
+
 .hrc-copy {
-  padding: 0 10px;
-  background: none;
+  padding: 0 12px;
+  height: 100%;
+  background: transparent;
   border: none;
-  border-left: 1px solid rgba(40,130,220,0.4);
-  color: var(--color-text-dim);
+  border-left: 1px solid rgba(48, 216, 112, 0.3);
+  color: #b8d4c0;
   cursor: pointer;
-  font-size: 14px;
-  display: flex; align-items: center;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all var(--t-fast);
 }
-.hrc-copy:hover { color: var(--gold-400); background: rgba(244,168,32,0.1); }
+
+.hrc-copy:hover {
+  color: #ffd060;
+  background: rgba(255, 208, 96, 0.15);
+}
+
+/* ── Share Dropdown Box ─────────────────── */
+.share-dropdown-wrapper {
+  height: 100%;
+  display: flex;
+  align-items: center;
+}
+
+.share-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  background: linear-gradient(160deg, #092013 0%, #04120a 100%);
+  border: 2px solid rgba(48, 216, 112, 0.45);
+  border-radius: 14px;
+  padding: 6px;
+  width: 170px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.95), 0 0 20px rgba(48, 216, 112, 0.3);
+  z-index: 100;
+  animation: slide-in-down 0.2s var(--ease-bounce) both;
+}
+
+.share-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  color: #ffffff;
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: left;
+}
+
+.share-menu-item:hover {
+  background: rgba(48, 216, 112, 0.2);
+  color: #ffd060;
+  transform: translateX(3px);
+}
+
+.share-brand-icon {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  flex-shrink: 0;
+}
 
 .hud-action-btn {
   display: flex;
@@ -255,7 +346,7 @@
 .hud-right-wrapper {
   position: absolute;
   right: 24px;
-  top: 90px;
+  top: 70px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
@@ -398,7 +489,7 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  width: 240px;
+  width: 270px;
   pointer-events: auto;
 }
 
@@ -569,16 +660,20 @@
     inset: 0;
   }
 
-  /* Video Section at Top (Prominent Widescreen) */
+  /* Video Section at Top (Prominent Widescreen Frame) */
   .game-world {
     position: relative;
-    width: 100%;
-    height: 48vh !important;
-    min-height: 280px;
-    max-height: 55vh;
+    top: 50px;
+    left: 10px;
+    right: 10px;
+    width: calc(100% - 20px);
+    height: 42vh !important;
+    min-height: 240px;
+    max-height: 48vh;
     flex-shrink: 0;
     z-index: 1;
-    background: #000;
+    border-radius: 16px;
+    margin-bottom: 60px;
   }
 
   /* Header Top Bar over video */

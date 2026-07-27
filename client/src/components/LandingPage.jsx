@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { getSocket } from '../services/socket';
 import Particles from './reactbits/Particles';
 import ShinyText from './reactbits/ShinyText';
@@ -14,6 +14,27 @@ export default function LandingPage({ onJoined }) {
   const [tab, setTab] = useState('create');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check URL parameters or path on initial load (e.g. ?room=BED104A9 or /room/BED104A9 or /BED104A9)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    let code = params.get('room');
+
+    if (!code) {
+      const pathParts = window.location.pathname.split('/').filter(Boolean);
+      if (pathParts.length > 0) {
+        const potentialCode = pathParts[pathParts.length - 1];
+        if (/^[a-zA-Z0-9]{8}$/.test(potentialCode)) {
+          code = potentialCode;
+        }
+      }
+    }
+
+    if (code) {
+      setRoomCode(code.toUpperCase());
+      setTab('join');
+    }
+  }, []);
 
   const socketRef = useRef(getSocket());
 
