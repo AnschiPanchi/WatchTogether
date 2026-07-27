@@ -33,6 +33,7 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
 
   const [showLeftNav, setShowLeftNav] = useState(true);
   const [showRightPanel, setShowRightPanel] = useState(true);
+  const [mobileTab, setMobileTab] = useState<'chat' | 'players' | 'video'>('chat');
 
   // ── HUD panel visibility ──────────────────────────────────────
   // Only one panel can be "open" at a time (like a game menu)
@@ -227,11 +228,6 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
 
           {/* Top-right actions */}
           <div className="hud-top-actions">
-            <button id="fullscreen-btn" className="hud-action-btn" onClick={toggleFullscreen} title="Toggle Fullscreen">
-              <span>{isFullscreen ? '⤓' : '⛶'}</span>
-              <span className="hab-label">{isFullscreen ? 'Exit' : 'Fullscreen'}</span>
-            </button>
-
             <button id="leave-room-btn" className="hud-action-btn danger" onClick={handleLeave} title="Leave Room">
               <span>🚪</span>
               <span className="hab-label">Leave</span>
@@ -357,6 +353,71 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
 
         {/* Toast */}
         {toast && <div className="toast" role="status">{toast}</div>}
+      </div>
+
+      {/* ── Mobile Portrait Tab Hub (Underneath 16:9 Video) ── */}
+      <div className="mobile-tab-hub">
+        <div className="mth-tabs" role="tablist">
+          <button
+            className={`mth-tab ${mobileTab === 'chat' ? 'active' : ''}`}
+            onClick={() => setMobileTab('chat')}
+          >
+            💬 Chat
+          </button>
+          <button
+            className={`mth-tab ${mobileTab === 'players' ? 'active' : ''}`}
+            onClick={() => setMobileTab('players')}
+          >
+            👥 Players ({participants.length})
+          </button>
+          {canControl && (
+            <button
+              className={`mth-tab ${mobileTab === 'video' ? 'active' : ''}`}
+              onClick={() => setMobileTab('video')}
+            >
+              🎬 Videos
+            </button>
+          )}
+        </div>
+
+        <div className="mth-content">
+          {mobileTab === 'chat' && (
+            <ChatPanel
+              messages={chatMessages}
+              myUserId={socket.id || ''}
+              myUsername={initial.username}
+              onSend={handleSendChat}
+            />
+          )}
+
+          {mobileTab === 'players' && (
+            <div className="mth-players-wrapper">
+              <div className="hud-user-card">
+                <div className="huc-avatar">{initial.username.charAt(0).toUpperCase()}</div>
+                <div className="huc-info">
+                  <span className="huc-name">{initial.username}</span>
+                  <span className="huc-role">{myRole}</span>
+                </div>
+              </div>
+              <ParticipantList
+                participants={participants}
+                myUserId={socket.id || ''}
+                myRole={myRole}
+                onAssignRole={handleAssignRole}
+                onRemoveParticipant={handleRemoveParticipant}
+                onTransferHost={handleTransferHost}
+              />
+            </div>
+          )}
+
+          {mobileTab === 'video' && canControl && (
+            <VideoSearch
+              onSelect={handleChangeVideo}
+              onClose={() => setMobileTab('chat')}
+              canControl={canControl}
+            />
+          )}
+        </div>
       </div>
     </div>
   );

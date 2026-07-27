@@ -114,6 +114,8 @@ export default function YouTubePlayer({
         playerVars: {
           autoplay: syncState.playState === 'playing' ? 1 : 0,
           controls: canControl ? 1 : 0,
+          playsinline: 1,
+          enablejsapi: 1,
           modestbranding: 1,
           rel: 0,
           start: Math.floor(syncState.currentTime),
