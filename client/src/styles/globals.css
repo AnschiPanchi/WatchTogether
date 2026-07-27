@@ -1,0 +1,87 @@
+/* globals.css — base reset + shared game UI utilities */
+
+@import url('https://fonts.googleapis.com/css2?family=Fredoka+One&family=Nunito:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@500;700&display=swap');
+@import './tokens.css';
+@import './animations.css';
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html { height: 100%; font-size: 16px; -webkit-font-smoothing: antialiased; }
+
+body {
+  height: 100%;
+  font-family: 'Nunito', sans-serif;
+  background: var(--color-bg);
+  color: var(--color-text);
+  overflow: hidden;
+}
+
+#root { height: 100%; display: flex; flex-direction: column; }
+
+/* ── Scrollbar ─ game-themed ─── */
+::-webkit-scrollbar        { width: 6px; }
+::-webkit-scrollbar-track  { background: rgba(0,0,0,0.3); border-radius: 3px; }
+::-webkit-scrollbar-thumb  {
+  background: linear-gradient(180deg, var(--blue-500), var(--blue-700));
+  border-radius: 3px;
+  border: 1px solid rgba(60,184,240,0.3);
+}
+::-webkit-scrollbar-thumb:hover { background: linear-gradient(180deg, var(--blue-400), var(--blue-600)); }
+
+::selection { background: rgba(244,168,32,0.3); color: #fff; }
+
+/* ── Game panel mixin ─────────── */
+.game-panel {
+  background: var(--gradient-panel);
+  border: 2px solid var(--color-border);
+  box-shadow: var(--shadow-panel), var(--glow-panel), inset 0 1px 0 rgba(255,255,255,0.06);
+  border-radius: var(--radius-lg);
+}
+
+/* ── Gold text glow ───────────── */
+.gold-text {
+  font-family: 'Fredoka One', cursive;
+  color: var(--gold-400);
+  animation: text-glow 3s ease-in-out infinite;
+}
+
+/* ── Utility error text ───────── */
+.error-msg {
+  color: #ff8090;
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 14px;
+  padding: 8px 12px;
+  background: rgba(232,48,64,0.12);
+  border: 1px solid rgba(232,48,64,0.3);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.error-msg::before { content: '⚠'; font-size: 14px; }
+
+/* ── Live dot ─────────────────── */
+.live-dot {
+  display: inline-block;
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green-500);
+  box-shadow: 0 0 8px var(--green-500);
+  animation: live-dot 1.5s ease-in-out infinite;
+}
+
+/* ── Rising bubble ───────────── */
+.bubble {
+  position: absolute;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%,
+    rgba(100,200,255,0.4),
+    rgba(30,100,200,0.15)
+  );
+  border: 1px solid rgba(100,200,255,0.25);
+  pointer-events: none;
+  animation:
+    bubble-rise var(--dur, 8s) ease-in var(--delay, 0s) infinite,
+    bubble-sway calc(var(--dur, 8s) * 0.6) ease-in-out var(--delay, 0s) infinite;
+}

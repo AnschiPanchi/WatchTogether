@@ -1,0 +1,18 @@
+/*
+ * index.css — entry point
+ * -----------------------------------------
+ * We split the CSS into logical files and
+ * import them here. Vite will bundle them into
+ * a single file in production, so there's no
+ * performance cost to this organisation.
+ *
+ * Load order matters: tokens → animations →
+ * globals → page-level → components.
+ */
+
+@import './styles/tokens.css';
+@import './styles/animations.css';
+@import './styles/globals.css';
+@import './styles/landing.css';
+@import './styles/room.css';
+@import './styles/components.css';

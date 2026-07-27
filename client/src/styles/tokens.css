@@ -1,0 +1,88 @@
+/*
+ * tokens.css — Game UI Design System
+ * Inspired by underwater/RPG game panel aesthetics:
+ * deep navy backgrounds, gold highlights, blue glow borders.
+ */
+
+@property --angle {
+  syntax: '<angle>';
+  initial-value: 0deg;
+  inherits: false;
+}
+
+:root {
+  /* ── Palette ─────────────────────────── */
+  --navy-950: #030c1a;
+  --navy-900: #060f20;
+  --navy-800: #091528;
+  --navy-700: #0d1e38;
+  --navy-600: #122548;
+  --navy-500: #163060;
+
+  --gold-400: #ffd060;
+  --gold-500: #f4a820;
+  --gold-600: #e08c10;
+  --gold-700: #c07008;
+
+  --blue-300: #72d4ff;
+  --blue-400: #3cb8f0;
+  --blue-500: #1e90d8;
+  --blue-600: #1268a8;
+  --blue-700: #0c4a7a;
+
+  --teal-400: #30dcc8;
+  --teal-500: #10b8a8;
+
+  --red-500:   #e83040;
+  --green-500: #30d870;
+  --purple-500: #9060e8;
+
+  /* ── Semantic ────────────────────────── */
+  --color-bg:       var(--navy-950);
+  --color-bg-mid:   var(--navy-900);
+  --color-panel:    var(--navy-700);
+  --color-panel-2:  var(--navy-600);
+
+  --color-border:      rgba(30, 120, 200, 0.5);
+  --color-border-glow: rgba(60, 180, 255, 0.7);
+  --color-border-gold: rgba(244, 168, 32, 0.8);
+
+  --color-text:     #e8f4ff;
+  --color-text-dim: #78a8cc;
+  --color-text-muted: #4a7090;
+
+  --color-gold:       var(--gold-500);
+  --color-gold-light: var(--gold-400);
+  --color-accent:     var(--blue-400);
+  --color-success:    var(--green-500);
+  --color-danger:     var(--red-500);
+
+  /* ── Gradients ───────────────────────── */
+  --gradient-panel:  linear-gradient(160deg, #0f2040 0%, #091528 50%, #0a1e38 100%);
+  --gradient-gold:   linear-gradient(135deg, #ffd060 0%, #f4a820 40%, #e08c10 100%);
+  --gradient-blue:   linear-gradient(135deg, #3cb8f0 0%, #1e68c8 100%);
+  --gradient-bg:     radial-gradient(ellipse at 30% 0%,   #0d2a50 0%, transparent 55%),
+                     radial-gradient(ellipse at 80% 100%, #061830 0%, transparent 55%),
+                     linear-gradient(180deg, #040e1e 0%, #060f24 100%);
+
+  /* ── Shadows / Glows ─────────────────── */
+  --shadow-panel:  0 8px 40px rgba(0,0,0,0.7), 0 2px 8px rgba(0,0,0,0.5);
+  --glow-blue:     0 0 14px rgba(60,184,240,0.5),  0 0 30px rgba(30,120,200,0.25);
+  --glow-gold:     0 0 14px rgba(244,168,32,0.6),  0 0 30px rgba(244,168,32,0.2);
+  --glow-panel:    0 0 0 2px rgba(30,120,200,0.4), 0 0 20px rgba(10,80,160,0.3);
+
+  /* ── Shape ───────────────────────────── */
+  --radius-xs:   6px;
+  --radius-sm:   10px;
+  --radius-md:   16px;
+  --radius-lg:   22px;
+  --radius-xl:   30px;
+  --radius-full: 9999px;
+
+  /* ── Timing ──────────────────────────── */
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --ease-out:    cubic-bezier(0.16, 1, 0.3, 1);
+  --t-fast: 120ms var(--ease-out);
+  --t-base: 220ms var(--ease-out);
+  --t-slow: 380ms var(--ease-out);
+}

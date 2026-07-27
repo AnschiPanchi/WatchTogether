@@ -1,0 +1,307 @@
+.landing {
+  height: 100%;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  background: var(--gradient-bg);
+}
+
+/* Animated depth vignette */
+.landing::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 50% at 50% 100%, rgba(6,24,60,0.8) 0%, transparent 70%),
+    radial-gradient(ellipse 100% 30% at 50% 0%,  rgba(0,8,20,0.9) 0%, transparent 60%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Subtle scan-line overlay for depth */
+.landing::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(
+    0deg,
+    transparent,
+    transparent 3px,
+    rgba(0,0,0,0.04) 3px,
+    rgba(0,0,0,0.04) 4px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* ── Bubble container ─────────── */
+.bg-bubbles {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+/* Each bubble has custom size/position/timing via inline style */
+.bg-bubbles .bubble { bottom: -60px; }
+
+/* ── Landing card ─────────────── */
+.landing-card {
+  position: relative;
+  z-index: 2;
+  width: min(460px, 94vw);
+  animation: slide-in-up 0.5s var(--ease-bounce) both;
+}
+
+.landing-card-inner {
+  /* Thick outer border with glow, inner highlight */
+  background: linear-gradient(160deg, #0e2248 0%, #08172e 60%, #0a1e3a 100%);
+  border: 2px solid rgba(40,140,220,0.6);
+  border-radius: var(--radius-xl);
+  box-shadow:
+    0 0 0 1px rgba(30,90,160,0.3),
+    0 0 40px rgba(20,80,180,0.4),
+    0 20px 60px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(100,180,255,0.12),
+    inset 0 -1px 0 rgba(0,0,0,0.4);
+  padding: 32px 28px 28px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Gold top accent bar */
+.landing-card-inner::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 20%; right: 20%;
+  height: 2px;
+  background: var(--gradient-gold);
+  border-radius: 0 0 4px 4px;
+  box-shadow: 0 0 16px rgba(244,168,32,0.8);
+}
+
+/* ── Logo ─────────────────────── */
+.landing-logo {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.logo-icon-wrap {
+  width: 56px; height: 56px;
+  flex-shrink: 0;
+}
+
+.logo-icon-bg {
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, #1e78d8, #0c4a9a);
+  border: 2px solid rgba(60,180,255,0.5);
+  border-radius: var(--radius-md);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 26px;
+  box-shadow: var(--glow-blue), 0 4px 12px rgba(0,0,0,0.5);
+  animation: float-gentle 3s ease-in-out infinite;
+  position: relative;
+}
+
+/* Inner gleam on logo icon */
+.logo-icon-bg::after {
+  content: '';
+  position: absolute;
+  top: 4px; left: 6px; right: 6px;
+  height: 30%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.2), transparent);
+  border-radius: 6px;
+}
+
+.logo-title {
+  font-family: 'Fredoka One', cursive;
+  font-size: 30px;
+  letter-spacing: 0.5px;
+  color: var(--gold-400);
+  text-shadow:
+    0 0 12px rgba(244,168,32,0.7),
+    0 2px 4px rgba(0,0,0,0.9),
+    0 4px 0 rgba(120,64,0,0.5);
+  line-height: 1;
+}
+
+.logo-sub {
+  font-size: 12px;
+  color: var(--blue-300);
+  margin-top: 4px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+
+/* ── Tab group ──────────────────── */
+.tab-group {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 24px;
+  background: rgba(0,0,0,0.3);
+  border: 1px solid rgba(30,90,160,0.4);
+  border-radius: var(--radius-md);
+  padding: 5px;
+}
+
+.tab-btn {
+  flex: 1;
+  font-family: 'Fredoka One', cursive;
+  font-size: 15px;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 9px 12px;
+  cursor: pointer;
+  transition: all var(--t-base);
+  position: relative;
+  overflow: hidden;
+}
+
+.tab-btn.active {
+  background: var(--gradient-gold);
+  color: #3a1800;
+  box-shadow: 0 0 16px rgba(244,168,32,0.5), 0 2px 8px rgba(0,0,0,0.4);
+}
+.tab-btn.active::after {
+  content: '';
+  position: absolute;
+  top: 2px; left: 10%; right: 10%;
+  height: 40%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.3), transparent);
+  border-radius: 4px;
+}
+
+.tab-btn:not(.active) {
+  background: rgba(20,60,120,0.4);
+  color: var(--blue-300);
+  border: 1px solid rgba(30,90,160,0.3);
+}
+.tab-btn:not(.active):hover {
+  background: rgba(30,80,150,0.6);
+  color: var(--color-text);
+  border-color: rgba(60,150,220,0.4);
+}
+
+/* ── Form fields ─────────────── */
+.form-group { margin-bottom: 16px; }
+
+.form-label {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1.2px;
+  color: var(--blue-300);
+  margin-bottom: 7px;
+}
+
+.input-field {
+  width: 100%;
+  background: rgba(5,15,40,0.7);
+  border: 2px solid rgba(30,100,180,0.5);
+  border-radius: var(--radius-sm);
+  padding: 12px 14px;
+  color: var(--color-text);
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  outline: none;
+  transition: border-color var(--t-base), box-shadow var(--t-base);
+  box-shadow: inset 0 2px 8px rgba(0,0,0,0.4);
+}
+.input-field::placeholder { color: var(--color-text-muted); }
+.input-field:focus {
+  border-color: rgba(60,180,255,0.8);
+  box-shadow: 0 0 0 3px rgba(60,180,255,0.15), inset 0 2px 8px rgba(0,0,0,0.3), var(--glow-blue);
+}
+
+/* ── CTA button — gold game style ─ */
+.cta-btn {
+  width: 100%;
+  font-family: 'Fredoka One', cursive;
+  font-size: 18px;
+  letter-spacing: 0.8px;
+  padding: 14px;
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: transform var(--t-fast), box-shadow var(--t-fast);
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  margin-bottom: 14px;
+
+  background: var(--gradient-gold);
+  color: #2a1000;
+  box-shadow:
+    0 4px 0 var(--gold-700),
+    0 6px 20px rgba(244,168,32,0.4),
+    inset 0 1px 0 rgba(255,255,255,0.3);
+}
+
+/* Top gloss highlight */
+.cta-btn::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 50%;
+  background: linear-gradient(180deg, rgba(255,255,255,0.25), transparent);
+  border-radius: var(--radius-md) var(--radius-md) 50% 50%;
+  pointer-events: none;
+}
+
+/* Shimmer sweep on hover */
+.cta-btn::after {
+  content: '';
+  position: absolute;
+  top: -50%; left: -60%;
+  width: 35%; height: 200%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.35), transparent);
+  transform: skewX(-15deg);
+  pointer-events: none;
+}
+.cta-btn:hover:not(:disabled)::after { animation: shimmer-gold 0.6s ease forwards; }
+
+.cta-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 var(--gold-700), 0 10px 28px rgba(244,168,32,0.5), inset 0 1px 0 rgba(255,255,255,0.3);
+}
+.cta-btn:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 var(--gold-700), 0 3px 12px rgba(244,168,32,0.3), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.cta-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* Compact variant used in modals */
+.cta-btn.compact {
+  width: auto;
+  padding: 11px 20px;
+  font-size: 15px;
+  margin: 0;
+  flex-shrink: 0;
+}
+
+/* ── Spinner ──────────────────── */
+.spinner {
+  width: 18px; height: 18px;
+  border: 3px solid rgba(0,0,0,0.2);
+  border-top-color: #2a1000;
+  border-radius: 50%;
+  animation: spin 0.6s linear infinite;
+  flex-shrink: 0;
+}
+
+/* ── Landing hint ─────────────── */
+.landing-hint {
+  font-size: 12px;
+  color: var(--color-text-muted);
+  text-align: center;
+  font-weight: 600;
+}
