@@ -654,26 +654,28 @@
     height: 100vh;
     height: 100dvh;
     width: 100vw;
-    background: #040a16;
+    background: radial-gradient(ellipse at 50% 0%, #0d2818 0%, #05140d 60%, #030a06 100%);
     overflow: hidden;
     position: fixed;
     inset: 0;
   }
 
-  /* Video Section at Top (Prominent Widescreen Frame) */
+  /* 16:9 Video Frame Section at Top */
   .game-world {
     position: relative;
-    top: 50px;
-    left: 10px;
-    right: 10px;
-    width: calc(100% - 20px);
-    height: 42vh !important;
-    min-height: 240px;
-    max-height: 48vh;
+    top: 56px;
+    left: 8px;
+    right: 8px;
+    width: calc(100% - 16px);
+    aspect-ratio: 16 / 9;
+    height: auto !important;
+    min-height: unset;
+    max-height: 40vh;
     flex-shrink: 0;
     z-index: 1;
-    border-radius: 16px;
-    margin-bottom: 60px;
+    border-radius: 14px;
+    margin-bottom: 64px;
+    align-self: center;
   }
 
   /* Header Top Bar over video */
@@ -685,18 +687,45 @@
   }
 
   .hud-top {
-    padding: 6px 10px;
-    background: linear-gradient(180deg, rgba(0, 5, 20, 0.85) 0%, transparent 100%);
+    padding: 6px 8px;
+    background: linear-gradient(180deg, rgba(3, 10, 6, 0.95) 0%, transparent 100%);
+    gap: 6px;
+  }
+
+  .hud-logo-icon {
+    width: 30px;
+    height: 30px;
   }
 
   .hud-logo-text {
     display: none;
   }
 
+  .hud-room-code {
+    height: 34px;
+    padding: 1px;
+    scale: 0.92;
+  }
+
+  .hrc-label {
+    font-size: 10px;
+    padding: 0 8px;
+  }
+
   .hrc-code {
-    font-size: 11px;
-    letter-spacing: 1px;
-    padding: 0 4px;
+    font-size: 12px;
+    letter-spacing: 2px;
+    padding: 0 8px;
+  }
+
+  .hrc-copy {
+    padding: 0 8px;
+    font-size: 14px;
+  }
+
+  .hud-action-btn.danger {
+    padding: 6px 10px;
+    font-size: 12px;
   }
 
   /* Hide Desktop Side Nav Wrappers in Portrait */
@@ -706,24 +735,30 @@
     display: none !important;
   }
 
-  /* Render Mobile Tab Hub Underneath Video */
+  /* Render Mobile Tab Hub Underneath Video (Same Width & Centering as Video Frame) */
   .mobile-tab-hub {
     display: flex;
     flex-direction: column;
     flex: 1;
     min-height: 0;
-    background: linear-gradient(180deg, #09172e 0%, #040b18 100%);
-    border-top: 2px solid rgba(60, 180, 255, 0.4);
+    width: calc(100% - 16px);
+    align-self: center;
+    background: linear-gradient(180deg, rgba(8, 28, 16, 0.95) 0%, #030a06 100%);
+    border: 2px solid rgba(48, 216, 112, 0.4);
+    border-radius: 16px;
+    margin-bottom: 12px;
+    overflow: hidden;
     z-index: 20;
     pointer-events: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8), 0 0 20px rgba(48, 216, 112, 0.2);
   }
 
   .mth-tabs {
     display: flex;
-    background: rgba(0, 5, 20, 0.6);
-    border-bottom: 2px solid rgba(30, 90, 160, 0.4);
-    padding: 4px;
-    gap: 4px;
+    background: rgba(0, 0, 0, 0.6);
+    border-bottom: 1.5px solid rgba(48, 216, 112, 0.3);
+    padding: 6px;
+    gap: 6px;
   }
 
   .mth-tab {
@@ -731,20 +766,21 @@
     font-family: 'Fredoka One', cursive;
     font-size: 13px;
     letter-spacing: 0.5px;
-    padding: 10px 4px;
-    border: none;
-    border-radius: var(--radius-sm);
-    background: rgba(20, 60, 120, 0.3);
-    color: var(--blue-300);
+    padding: 10px 6px;
+    border: 1px solid rgba(48, 216, 112, 0.2);
+    border-radius: 10px;
+    background: rgba(8, 28, 16, 0.5);
+    color: #88aa92;
     cursor: pointer;
     transition: all var(--t-fast);
     text-align: center;
   }
 
   .mth-tab.active {
-    background: var(--gradient-gold);
-    color: #2a1000;
-    box-shadow: 0 2px 8px rgba(244, 168, 32, 0.4);
+    background: linear-gradient(135deg, #ffd060 0%, #e08c10 100%);
+    color: #0d1e38;
+    border-color: #ffd060;
+    box-shadow: 0 0 12px rgba(255, 208, 96, 0.5);
   }
 
   .mth-content {
