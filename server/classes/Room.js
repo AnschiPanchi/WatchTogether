@@ -19,7 +19,7 @@ class Room {
     /** @type {{ videoId: string, playState: 'playing'|'paused', currentTime: number, lastUpdatedAt: number }} */
     this.videoState = {
       videoId: 'dQw4w9WgXcQ', // default video
-      playState: 'playing',
+      playState: 'paused',
       currentTime: 0,
       lastUpdatedAt: Date.now(),
     };
@@ -70,6 +70,20 @@ class Room {
     if (this.chatHistory.length > 200) {
       this.chatHistory.shift();
     }
+
+    // Persist to MongoDB asynchronously if connected
+    const ChatMessageModel = require('../models/ChatMessageModel');
+    const { getIsConnected } = require('../config/db');
+    if (getIsConnected()) {
+      ChatMessageModel.create({
+        roomId: this.roomId,
+        userId: msg.userId,
+        username: msg.username,
+        role: msg.role,
+        message: msg.message,
+        timestamp: msg.timestamp,
+      }).catch((err) => console.warn('[DB] Failed to persist chat message:', err.message));
+    }
   }
 
   // ─── Video State ──────────────────────────────────────────────────────────
@@ -91,6 +105,17 @@ class Room {
       ...patch,
       lastUpdatedAt: Date.now(),
     };
+
+    // Persist to MongoDB asynchronously if connected
+    const RoomModel = require('../models/RoomModel');
+    const { getIsConnected } = require('../config/db');
+    if (getIsConnected()) {
+      RoomModel.findOneAndUpdate(
+        { roomId: this.roomId },
+        { videoState: this.videoState, lastActiveAt: new Date() },
+        { upsert: true }
+      ).catch((err) => console.warn('[DB] Failed to persist room state:', err.message));
+    }
   }
 
   currentSyncPayload() {

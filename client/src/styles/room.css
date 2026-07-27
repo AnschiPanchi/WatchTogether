@@ -6,7 +6,7 @@
   height: 100%;
   flex: 1;
   overflow: hidden;
-  background: var(--gradient-bg);
+  background: #000;
   display: flex;
 }
 
@@ -45,13 +45,37 @@
   display: block;
 }
 
+.viewer-click-shield {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  cursor: not-allowed;
+  pointer-events: auto;
+}
+
+.unmute-banner {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 10;
+  background: rgba(244, 168, 32, 0.95);
+  color: #1a0800;
+  padding: 14px 28px;
+  border-radius: var(--radius-md);
+  font-family: 'Fredoka One', cursive;
+  font-size: 16px;
+  box-shadow: var(--shadow-panel), var(--glow-gold);
+  cursor: pointer;
+  animation: pulse 1.5s infinite;
+  user-select: none;
+}
 .viewer-overlay {
   position: absolute;
-  top: 10px;
-  left: 10px;
+  top: 14px;
+  left: 14px;
   pointer-events: none;
   animation: slide-in-up 0.3s var(--ease-bounce);
-  z-index: 5;
 }
 .viewer-badge {
   background: rgba(5,15,40,0.85);
@@ -62,80 +86,6 @@
   font-weight: 700;
   color: var(--blue-300);
   backdrop-filter: blur(8px);
-}
-
-/* Video loading overlay */
-.video-loading-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(0, 5, 20, 0.9);
-  z-index: 10;
-  gap: 16px;
-}
-.loading-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid rgba(60, 180, 255, 0.2);
-  border-top-color: var(--blue-400);
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-.video-loading-overlay span {
-  color: var(--blue-300);
-  font-family: 'Fredoka One', cursive;
-  font-size: 14px;
-  text-shadow: 0 0 10px rgba(60, 180, 255, 0.5);
-}
-
-/* Video error overlay */
-.video-error-overlay {
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  background: rgba(20, 5, 5, 0.9);
-  z-index: 10;
-  gap: 16px;
-  padding: 24px;
-  text-align: center;
-}
-.error-icon {
-  font-size: 48px;
-  filter: drop-shadow(0 0 10px rgba(255, 100, 100, 0.5));
-}
-.error-message {
-  color: #ff6070;
-  font-family: 'Fredoka One', cursive;
-  font-size: 16px;
-  max-width: 300px;
-  line-height: 1.4;
-}
-.retry-btn {
-  background: linear-gradient(135deg, #1e78d8, #0c4a9a);
-  border: 2px solid rgba(60, 180, 255, 0.5);
-  border-radius: var(--radius-md);
-  padding: 10px 24px;
-  color: #fff;
-  font-family: 'Fredoka One', cursive;
-  font-size: 14px;
-  cursor: pointer;
-  transition: all var(--t-fast);
-  box-shadow: var(--glow-blue);
-}
-.retry-btn:hover {
-  background: linear-gradient(135deg, #2e88e8, #1c5aba);
-  transform: translateY(-2px);
-  box-shadow: 0 0 20px rgba(60, 180, 255, 0.6);
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
 }
 
 /* ── HUD overlay ──────────────────── */
@@ -247,17 +197,63 @@
   transform: translateY(-1px);
 }
 
-/* ── Left nav panel ───────────────── */
-.hud-left-nav {
+/* ── Toggle Arrows for Hiding HUD Sections ───────────────── */
+.hud-left-wrapper {
   position: absolute;
   left: 24px;
   top: 50%;
   transform: translateY(-50%);
   display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.hud-right-wrapper {
+  position: absolute;
+  right: 24px;
+  top: 90px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+  pointer-events: auto;
+  z-index: 20;
+}
+
+.hud-toggle-arrow {
+  background: rgba(5, 15, 40, 0.85);
+  border: 2px solid rgba(60, 180, 255, 0.5);
+  border-radius: var(--radius-sm);
+  color: var(--gold-400);
+  font-family: 'Fredoka One', cursive;
+  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  box-shadow: var(--glow-blue), 0 4px 12px rgba(0,0,0,0.5);
+  transition: all var(--t-fast);
+  user-select: none;
+}
+.hud-toggle-arrow:hover {
+  background: rgba(20, 80, 160, 0.9);
+  color: #fff;
+  transform: scale(1.1);
+}
+.hud-toggle-arrow:active {
+  transform: scale(0.95);
+}
+
+/* ── Left nav panel ───────────────── */
+.hud-left-nav {
+  display: flex;
   flex-direction: column;
   gap: 12px;
   pointer-events: auto;
-  transition: transform 0.4s var(--ease-bounce), opacity 0.4s var(--ease-out);
 }
 
 .nav-tile {
@@ -357,15 +353,11 @@
 
 /* ── Right info panel ─────────────── */
 .hud-right-panel {
-  position: absolute;
-  right: 24px;
-  top: 90px;
   display: flex;
   flex-direction: column;
   gap: 16px;
   width: 240px;
   pointer-events: auto;
-  transition: transform 0.4s var(--ease-bounce), opacity 0.4s var(--ease-out);
 }
 
 .hud-user-card {
@@ -514,52 +506,6 @@
 /* Overlay fixes */
 .search-overlay {
   pointer-events: auto;
-}
-
-/* ── UI Collapse Toggles ────────────── */
-.hud-toggle-btn {
-  position: absolute;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 24px;
-  height: 60px;
-  background: rgba(0, 5, 20, 0.7);
-  border: 1px solid rgba(40, 130, 220, 0.5);
-  backdrop-filter: blur(8px);
-  color: var(--blue-300);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 20;
-  transition: all var(--t-fast);
-  pointer-events: auto;
-  font-size: 10px;
-}
-.hud-toggle-btn:hover {
-  background: rgba(20, 60, 120, 0.8);
-  color: #fff;
-  box-shadow: var(--glow-blue);
-}
-.hud-toggle-left {
-  left: 0;
-  border-left: none;
-  border-radius: 0 8px 8px 0;
-}
-.hud-toggle-right {
-  right: 0;
-  border-right: none;
-  border-radius: 8px 0 0 8px;
-}
-.hud-left-nav.hidden {
-  transform: translate(-150%, -50%);
-  opacity: 0;
-  pointer-events: none;
-}
-.hud-right-panel.hidden {
-  transform: translateX(150%);
-  opacity: 0;
-  pointer-events: none;
 }
 
 /* ── Responsive ──────────────── */

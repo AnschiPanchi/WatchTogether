@@ -19,7 +19,7 @@ import VideoSearch from './VideoSearch';
 
 interface Props {
   roomState: RoomState;
-  onLeave:   () => void;
+  onLeave: () => void;
 }
 
 export default function WatchRoom({ roomState: initial, onLeave }: Props) {
@@ -27,18 +27,18 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
 
   // ── Room state ────────────────────────────────────────────────
   const [participants, setParticipants] = useState<ParticipantInfo[]>(initial.participants);
-  const [myRole,       setMyRole]       = useState<Role>(initial.role);
-  const [syncState,    setSyncState]    = useState<SyncState>(initial.syncState);
+  const [myRole, setMyRole] = useState<Role>(initial.role);
+  const [syncState, setSyncState] = useState<SyncState>(initial.syncState);
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>(initial.chatHistory || []);
+
+  const [showLeftNav, setShowLeftNav] = useState(true);
+  const [showRightPanel, setShowRightPanel] = useState(true);
 
   // ── HUD panel visibility ──────────────────────────────────────
   // Only one panel can be "open" at a time (like a game menu)
   const [activePanel, setActivePanel] = useState<'people' | 'chat' | 'video' | null>('chat');
-  const [toast,       setToast]       = useState('');
-  const [copied,      setCopied]      = useState(false);
-
-  const [leftUIVisible, setLeftUIVisible]   = useState(true);
-  const [rightUIVisible, setRightUIVisible] = useState(true);
+  const [toast, setToast] = useState('');
+  const [copied, setCopied] = useState(false);
 
   const togglePanel = (panel: 'people' | 'chat' | 'video') =>
     setActivePanel(prev => prev === panel ? null : panel);
@@ -51,7 +51,7 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
   // ── Socket events ─────────────────────────────────────────────
   useEffect(() => {
     const onSyncState = (data: SyncState) => {
-      if (data.triggeredBy !== socket.id) setSyncState(data);
+      setSyncState(data);
     };
 
     const onUserJoined = (data: { participants: ParticipantInfo[]; username: string }) => {
@@ -67,57 +67,59 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
 
     const onRoleAssigned = (data: { userId: string; role: Role; participants: ParticipantInfo[] }) => {
       setParticipants(data.participants);
-      if (data.userId === socket.id) { setMyRole(data.role); showToast(`Role: ${data.role}`); }
+      const me = data.participants.find(p => p.userId === socket.id);
+      if (me) {
+        setMyRole(me.role);
+      }
+      if (data.userId === socket.id) {
+        showToast(`Role updated: ${data.role}`);
+      }
     };
 
     const onParticipantRemoved = (data: { participants: ParticipantInfo[] }) => setParticipants(data.participants);
     const onRemovedFromRoom = () => { alert('You were removed from the room.'); onLeave(); };
     const onChatMessage = (msg: ChatMessage) => setChatMessages(prev => [...prev.slice(-199), msg]);
     const onErrorEvent = (data: { message?: string }) => {
-      showToast(data.message || 'Something went wrong.');
+      showToast(`🔒 ${data.message || 'Only Host or Moderator can perform this action.'}`);
     };
 
-    socket.on('sync_state',          onSyncState);
-    socket.on('user_joined',         onUserJoined);
-    socket.on('user_left',           onUserLeft);
-    socket.on('role_assigned',       onRoleAssigned);
+    socket.on('sync_state', onSyncState);
+    socket.on('user_joined', onUserJoined);
+    socket.on('user_left', onUserLeft);
+    socket.on('role_assigned', onRoleAssigned);
     socket.on('participant_removed', onParticipantRemoved);
-    socket.on('removed_from_room',   onRemovedFromRoom);
-    socket.on('chat_message',        onChatMessage);
-    socket.on('error_event',         onErrorEvent);
+    socket.on('removed_from_room', onRemovedFromRoom);
+    socket.on('chat_message', onChatMessage);
+    socket.on('error_event', onErrorEvent);
 
     return () => {
-      socket.off('sync_state',          onSyncState);
-      socket.off('user_joined',         onUserJoined);
-      socket.off('user_left',           onUserLeft);
-      socket.off('role_assigned',       onRoleAssigned);
+      socket.off('sync_state', onSyncState);
+      socket.off('user_joined', onUserJoined);
+      socket.off('user_left', onUserLeft);
+      socket.off('role_assigned', onRoleAssigned);
       socket.off('participant_removed', onParticipantRemoved);
-      socket.off('removed_from_room',   onRemovedFromRoom);
-      socket.off('chat_message',        onChatMessage);
-      socket.off('error_event',         onErrorEvent);
+      socket.off('removed_from_room', onRemovedFromRoom);
+      socket.off('chat_message', onChatMessage);
+      socket.off('error_event', onErrorEvent);
     };
   }, [socket, onLeave, showToast]);
 
   // ── Helpers ───────────────────────────────────────────────────
   const canControl = myRole === 'host' || myRole === 'moderator';
 
-  const handlePlay  = ()    => socket.emit('play',  {});
+  const handlePlay = () => socket.emit('play', {});
   const handlePause = (t: number) => socket.emit('pause', { currentTime: t });
-  const handleSeek  = (t: number) => socket.emit('seek', { time: t });
-  const handleVideoError = (error: string) => {
-    showToast(`Video error: ${error}`);
-  };
 
   const handleChangeVideo = (videoId: string) => {
     socket.emit('change_video', { videoId });
     setActivePanel(null);
   };
 
-  const handleLeave             = () => { socket.emit('leave_room', { roomId: initial.roomId }); onLeave(); };
-  const handleAssignRole        = (uid: string, role: string) => socket.emit('assign_role',        { userId: uid, role });
-  const handleRemoveParticipant = (uid: string)               => socket.emit('remove_participant', { userId: uid });
-  const handleTransferHost      = (uid: string)               => socket.emit('transfer_host',      { userId: uid });
-  const handleSendChat          = (msg: string)               => socket.emit('chat_message',       { message: msg });
+  const handleLeave = () => { socket.emit('leave_room', { roomId: initial.roomId }); onLeave(); };
+  const handleAssignRole = (uid: string, role: string) => socket.emit('assign_role', { userId: uid, role });
+  const handleRemoveParticipant = (uid: string) => socket.emit('remove_participant', { userId: uid });
+  const handleTransferHost = (uid: string) => socket.emit('transfer_host', { userId: uid });
+  const handleSendChat = (msg: string) => socket.emit('chat_message', { message: msg });
 
   const copyRoomCode = () => {
     navigator.clipboard.writeText(initial.roomId).then(() => {
@@ -160,43 +162,24 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
 
   // ── Left nav tiles definition ─────────────────────────────────
   const navTiles = [
-    { id: 'video'  as const, icon: '🎬', label: 'Videos', show: canControl, color: 'gold' },
-    { id: 'chat'   as const, icon: '💬', label: 'Chat',   show: true, color: 'orange' },
+    { id: 'video' as const, icon: '🎬', label: 'Videos', show: canControl, color: 'gold' },
+    { id: 'chat' as const, icon: '💬', label: 'Chat', show: true, color: 'orange' },
   ];
 
   // ── Render ────────────────────────────────────────────────────
   return (
     <div className="game-room">
 
-      {/* ── Ambient background for depth ── */}
-      <div className="bg-bubbles" aria-hidden="true" style={{ zIndex: 0, opacity: 0.6 }}>
-        {[{s:18,l:8, dur:9, delay:0}, {s:10,l:18,dur:12,delay:2},{s:25,l:35,dur:7, delay:1},
-          {s:12,l:55,dur:14,delay:4},{s:20,l:70,dur:10,delay:0},{s:8, l:82,dur:8, delay:3},
-          {s:30,l:92,dur:11,delay:5},{s:14,l:48,dur:13,delay:1},{s:22,l:62,dur:9, delay:6}]
-          .map((b,i) => (
-            <div
-              key={i}
-              className="bubble"
-              style={{
-                width: b.s, height: b.s,
-                left: `${b.l}%`,
-                '--dur': `${b.dur}s`,
-                '--delay': `${b.delay}s`,
-              } as React.CSSProperties}
-            />
-          ))}
-      </div>
-
       {/* ── Full-screen video world ───────── */}
       <div className="game-world">
         <YouTubePlayer
+          key={`${myRole}-${canControl}`}
           syncState={syncState}
           canControl={canControl}
           myUserId={socket.id || ''}
           onPlay={handlePlay}
           onPause={handlePause}
-          onSeek={handleSeek}
-          onError={handleVideoError}
+          onPermissionDenied={showToast}
         />
       </div>
 
@@ -229,74 +212,88 @@ export default function WatchRoom({ roomState: initial, onLeave }: Props) {
           </div>
         </header>
 
-        {/* ── Toggle UI Buttons ────────────── */}
-        <button className="hud-toggle-btn hud-toggle-left" onClick={() => setLeftUIVisible(!leftUIVisible)}>
-          {leftUIVisible ? '◀' : '▶'}
-        </button>
-        <button className="hud-toggle-btn hud-toggle-right" onClick={() => setRightUIVisible(!rightUIVisible)}>
-          {rightUIVisible ? '▶' : '◀'}
-        </button>
-
         {/* ── Left nav panel ───────────────── */}
-        <nav className={`hud-left-nav ${leftUIVisible ? '' : 'hidden'}`} aria-label="Navigation">
-          {navTiles.filter(t => t.show).map(tile => (
-            <button
-              key={tile.id}
-              id={`nav-${tile.id}`}
-              className={`nav-tile tile-${tile.color} ${activePanel === tile.id ? 'active' : ''}`}
-              onClick={() => togglePanel(tile.id)}
-              aria-pressed={activePanel === tile.id}
-            >
-              <span className="nav-tile-icon">{tile.icon}</span>
-              <span className="nav-tile-label">{tile.label}</span>
-            </button>
-          ))}
+        <div className="hud-left-wrapper">
+          {showLeftNav && (
+            <nav className="hud-left-nav" aria-label="Navigation">
+              {navTiles.filter(t => t.show).map(tile => (
+                <button
+                  key={tile.id}
+                  id={`nav-${tile.id}`}
+                  className={`nav-tile tile-${tile.color} ${activePanel === tile.id ? 'active' : ''}`}
+                  onClick={() => togglePanel(tile.id)}
+                  aria-pressed={activePanel === tile.id}
+                >
+                  <span className="nav-tile-icon">{tile.icon}</span>
+                  <span className="nav-tile-label">{tile.label}</span>
+                </button>
+              ))}
 
-          {/* Divider */}
-          <div className="nav-divider" />
+              {/* Divider */}
+              <div className="nav-divider" />
 
-          {/* Viewer badge when not in control */}
-          {!canControl && (
-            <div className="nav-role-chip viewer">
-              <span>👁</span>
-              <span>Viewer</span>
-            </div>
+              {/* Viewer badge when not in control */}
+              {!canControl && (
+                <div className="nav-role-chip viewer">
+                  <span>👁</span>
+                  <span>Viewer</span>
+                </div>
+              )}
+              {myRole === 'host' && (
+                <div className="nav-role-chip host">
+                  <span>👑</span>
+                  <span>Host</span>
+                </div>
+              )}
+              {myRole === 'moderator' && (
+                <div className="nav-role-chip mod">
+                  <span>🛡️</span>
+                  <span>Mod</span>
+                </div>
+              )}
+            </nav>
           )}
-          {myRole === 'host' && (
-            <div className="nav-role-chip host">
-              <span>👑</span>
-              <span>Host</span>
-            </div>
-          )}
-          {myRole === 'moderator' && (
-            <div className="nav-role-chip mod">
-              <span>🛡️</span>
-              <span>Mod</span>
-            </div>
-          )}
-        </nav>
+          <button
+            className="hud-toggle-arrow left-arrow"
+            onClick={() => setShowLeftNav(prev => !prev)}
+            title={showLeftNav ? "Hide Left Menu" : "Show Left Menu"}
+          >
+            {showLeftNav ? '◀' : '▶'}
+          </button>
+        </div>
 
         {/* ── Right info panel ─────────────── */}
-        <aside className={`hud-right-panel ${rightUIVisible ? '' : 'hidden'}`} aria-label="Room info">
-          {/* My user card */}
-          <div className="hud-user-card">
-            <div className="huc-avatar">{initial.username.charAt(0).toUpperCase()}</div>
-            <div className="huc-info">
-              <span className="huc-name">{initial.username}</span>
-              <span className="huc-role">{myRole}</span>
-            </div>
-          </div>
+        <div className="hud-right-wrapper">
+          <button
+            className="hud-toggle-arrow right-arrow"
+            onClick={() => setShowRightPanel(prev => !prev)}
+            title={showRightPanel ? "Hide Leaderboard" : "Show Leaderboard"}
+          >
+            {showRightPanel ? '▶' : '◀'}
+          </button>
+          {showRightPanel && (
+            <aside className="hud-right-panel" aria-label="Room info">
+              {/* My user card */}
+              <div className="hud-user-card">
+                <div className="huc-avatar">{initial.username.charAt(0).toUpperCase()}</div>
+                <div className="huc-info">
+                  <span className="huc-name">{initial.username}</span>
+                  <span className="huc-role">{myRole}</span>
+                </div>
+              </div>
 
-          {/* Participant mini-list (Leaderboard) */}
-          <ParticipantList
-            participants={participants}
-            myUserId={socket.id || ''}
-            myRole={myRole}
-            onAssignRole={handleAssignRole}
-            onRemoveParticipant={handleRemoveParticipant}
-            onTransferHost={handleTransferHost}
-          />
-        </aside>
+              {/* Participant mini-list (Leaderboard) */}
+              <ParticipantList
+                participants={participants}
+                myUserId={socket.id || ''}
+                myRole={myRole}
+                onAssignRole={handleAssignRole}
+                onRemoveParticipant={handleRemoveParticipant}
+                onTransferHost={handleTransferHost}
+              />
+            </aside>
+          )}
+        </div>
 
         {/* ── Floating panels (left-anchored) ── */}
 

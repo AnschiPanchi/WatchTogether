@@ -1,204 +1,101 @@
 import { useEffect, useRef, useCallback, useState } from 'react';
 import type { SyncState } from '../types';
 
-// ─── YouTube IFrame API Loader (singleton) ────────────────────────────────────
-let ytApiReady = false;
-let ytApiCallbacks: (() => void)[] = [];
-
-function loadYTApi(): Promise<void> {
-  return new Promise((resolve) => {
-    if (ytApiReady) {
-      resolve();
-      return;
-    }
-    ytApiCallbacks.push(resolve);
-    if (!document.getElementById('yt-api-script')) {
-      const script = document.createElement('script');
-      script.id = 'yt-api-script';
-      script.src = 'https://www.youtube.com/iframe_api';
-      document.head.appendChild(script);
-    }
-  });
-}
-
-// YouTube calls this globally when the IFrame API finishes loading
-(window as any).onYouTubeIframeAPIReady = () => {
-  ytApiReady = true;
-  ytApiCallbacks.forEach((cb) => cb());
-  ytApiCallbacks = [];
-};
-
-// ─── Component ────────────────────────────────────────────────────────────────
 interface Props {
   syncState: SyncState;
   canControl: boolean;
   myUserId: string;
   onPlay: () => void;
   onPause: (currentTime: number) => void;
-  onSeek: (currentTime: number) => void;
-  onError?: (error: string) => void;
+  onPermissionDenied?: (message: string) => void;
+}
+
+declare global {
+  interface Window {
+    YT: any;
+    onYouTubeIframeAPIReady: (() => void) | undefined;
+  }
 }
 
 export default function YouTubePlayer({
   syncState,
   canControl,
-  myUserId,
   onPlay,
   onPause,
-  onSeek,
-  onError,
+  onPermissionDenied,
 }: Props) {
-  const playerMountRef = useRef<HTMLDivElement>(null);
-  const playerRef = useRef<YT.Player | null>(null);
-  const syncStateRef = useRef(syncState);
-  const lastVideoIdRef = useRef('');
+  const containerRef = useRef<HTMLDivElement>(null);
+  const playerRef = useRef<any>(null);
   const suppressUntilRef = useRef<number>(0);
-  const lastSyncedTimeRef = useRef<number>(syncState.currentTime);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
+  const isReadyRef = useRef<boolean>(false);
+  const currentVideoIdRef = useRef<string>(syncState.videoId);
+
+  const suppress = (ms = 800) => {
+    suppressUntilRef.current = Date.now() + ms;
+  };
 
   const isSuppressed = () => Date.now() < suppressUntilRef.current;
-  const suppress = (ms = 700) => { suppressUntilRef.current = Date.now() + ms; };
 
-  syncStateRef.current = syncState;
-  lastSyncedTimeRef.current = syncState.currentTime;
+  const [needsUnmute, setNeedsUnmute] = useState(false);
 
-  // ─── Init Player ────────────────────────────────────────────────────────────
-  useEffect(() => {
-    let isMounted = true;
-    const divId = `yt-player-${Math.random().toString(36).substr(2, 9)}`;
-
-    // Create a fresh div for the YouTube IFrame API to replace
-    const targetDiv = document.createElement('div');
-    targetDiv.id = divId;
-    targetDiv.style.width = '100%';
-    targetDiv.style.height = '100%';
-    
-    if (playerMountRef.current) {
-      playerMountRef.current.replaceChildren(targetDiv);
-    }
-
-    loadYTApi().then(() => {
-      if (!isMounted) return;
-
-      console.log('[DEBUG YT] Creating new YT.Player with videoId:', syncStateRef.current.videoId);
-      playerRef.current = new YT.Player(divId, {
-        height: '100%',
-        width: '100%',
-        videoId: syncStateRef.current.videoId,
-        host: 'https://www.youtube.com',
-        playerVars: {
-          enablejsapi: 1,
-          controls: canControl ? 1 : 0,
-          disablekb: canControl ? 0 : 1,
-          modestbranding: 1,
-          rel: 0,
-          fs: 1,
-          playsinline: 1,
-          autoplay: syncStateRef.current.playState === 'playing' ? 1 : 0,
-          origin: window.location.origin,
-        },
-        events: {
-          onReady: (e) => {
-            if (!isMounted) return;
-            console.log('[DEBUG YT] Player ready for video:', syncStateRef.current.videoId);
-            lastVideoIdRef.current = syncStateRef.current.videoId;
-            setIsReady(true);
-            setIsLoading(false);
-            suppress(1000);
-            e.target.seekTo(syncStateRef.current.currentTime, true);
-            if (syncStateRef.current.playState === 'playing') {
-              e.target.playVideo();
-            } else {
-              e.target.pauseVideo();
-            }
-          },
-          onStateChange: (e) => {
-            if (!isMounted || isSuppressed()) return;
-            const state = e.data;
-            if (state === YT.PlayerState.PLAYING) {
-              onPlay();
-            } else if (state === YT.PlayerState.PAUSED) {
-              const t = playerRef.current?.getCurrentTime() ?? 0;
-              onPause(t);
-            }
-          },
-          onError: (e) => {
-            console.error('[YT Player Error code]', e.data);
-            const errorMessages: Record<number, string> = {
-              2: 'Invalid video ID',
-              5: 'HTML5 player error',
-              100: 'Video not found',
-              101: 'Video not embeddable',
-              150: 'Video not embeddable',
-            };
-            const errorMsg = errorMessages[e.data] || `Unknown error (${e.data})`;
-            setError(errorMsg);
-            setIsLoading(false);
-            onError?.(errorMsg);
-          },
-        },
-      });
-    });
-
-    return () => {
-      isMounted = false;
-      if (playerRef.current) {
-        try { playerRef.current.destroy(); } catch (err) {}
-        playerRef.current = null;
-      }
-      if (playerMountRef.current) {
-        playerMountRef.current.replaceChildren();
-      }
-    };
-  }, []); // only run once on mount
-
-  useEffect(() => {
+  const handleUnmute = () => {
     const player = playerRef.current;
-    if (!player || !isReady) return;
-
-    const currentTime = player.getCurrentTime?.() ?? 0;
-    const timeDelta = Math.abs(currentTime - lastSyncedTimeRef.current);
-    const isUserDrivenSeek = timeDelta > 2;
-
-    if (canControl && syncState.triggeredBy === myUserId && isUserDrivenSeek) {
-      onSeek(currentTime);
+    if (player) {
+      if (typeof player.unMute === 'function') player.unMute();
+      if (typeof player.playVideo === 'function') player.playVideo();
     }
-  }, [canControl, isReady, myUserId, onSeek, syncState]);
+    setNeedsUnmute(false);
+  };
 
-  // ─── Apply Remote Sync ───────────────────────────────────────────────────────
+  // Handle remote sync changes
   const applySync = useCallback((state: SyncState) => {
     const player = playerRef.current;
-    if (!player || typeof player.getPlayerState !== 'function' || !isReady) {
-      console.log('[DEBUG YT] Player not ready, skipping sync');
-      return;
-    }
+    if (!player || !isReadyRef.current) return;
 
-    suppress();
-
-    if (state.videoId !== lastVideoIdRef.current) {
-      console.log('[DEBUG YT] applySync changing video to:', state.videoId);
-      lastVideoIdRef.current = state.videoId;
+    // Check videoId change
+    if (state.videoId !== currentVideoIdRef.current) {
+      currentVideoIdRef.current = state.videoId;
       suppress(1500);
       if (state.playState === 'playing') {
-        player.loadVideoById({ videoId: state.videoId, startSeconds: state.currentTime });
+        player.loadVideoById(state.videoId, state.currentTime);
       } else {
-        player.cueVideoById({ videoId: state.videoId, startSeconds: state.currentTime });
+        player.cueVideoById(state.videoId, state.currentTime);
       }
       return;
     }
 
-    const localTime = player.getCurrentTime() ?? 0;
-    if (Math.abs(localTime - state.currentTime) > 1.5) {
-      player.seekTo(state.currentTime, true);
+    // Drift check (> 2.0s) to prevent playback flickering
+    const currentTime = typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : 0;
+    if (Math.abs(currentTime - state.currentTime) > 2.0) {
+      suppress(1000);
+      if (typeof player.seekTo === 'function') {
+        player.seekTo(state.currentTime, true);
+      }
     }
 
-    const ps = player.getPlayerState();
-    if (state.playState === 'playing' && ps !== YT.PlayerState.PLAYING) {
-      player.playVideo();
-    } else if (state.playState === 'paused' && ps === YT.PlayerState.PLAYING) {
-      player.pauseVideo();
+    // Play/Pause Sync with Browser Autoplay Fallback
+    const playerState = typeof player.getPlayerState === 'function' ? player.getPlayerState() : -1;
+    if (state.playState === 'playing') {
+      if (playerState !== window.YT.PlayerState.PLAYING) {
+        try {
+          const res = player.playVideo();
+          if (res && typeof res.catch === 'function') {
+            res.catch(() => {
+              if (typeof player.mute === 'function') player.mute();
+              player.playVideo();
+              setNeedsUnmute(true);
+            });
+          }
+        } catch (e) {
+          if (typeof player.mute === 'function') player.mute();
+          player.playVideo();
+          setNeedsUnmute(true);
+        }
+      }
+    } else if (state.playState === 'paused') {
+      if (playerState !== window.YT.PlayerState.PAUSED) {
+        player.pauseVideo();
+      }
     }
   }, []);
 
@@ -206,38 +103,109 @@ export default function YouTubePlayer({
     applySync(syncState);
   }, [syncState, applySync]);
 
-  // ─── Render ──────────────────────────────────────────────────────────────────
+  useEffect(() => {
+    let checkInterval: any = null;
+
+    const initPlayer = () => {
+      if (!containerRef.current || playerRef.current) return;
+
+      playerRef.current = new window.YT.Player(containerRef.current, {
+        videoId: syncState.videoId,
+        playerVars: {
+          autoplay: syncState.playState === 'playing' ? 1 : 0,
+          controls: canControl ? 1 : 0,
+          modestbranding: 1,
+          rel: 0,
+          start: Math.floor(syncState.currentTime),
+        },
+        events: {
+          onReady: () => {
+            isReadyRef.current = true;
+            if (syncState.playState === 'playing') {
+              playerRef.current?.playVideo();
+            } else {
+              playerRef.current?.pauseVideo();
+            }
+          },
+          onStateChange: (event: any) => {
+            if (isSuppressed()) return;
+
+            if (event.data === window.YT.PlayerState.PLAYING) {
+              if (canControl) {
+                onPlay();
+              } else {
+                suppress();
+                if (syncState.playState === 'paused') {
+                  playerRef.current?.pauseVideo();
+                }
+                onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
+              }
+            } else if (event.data === window.YT.PlayerState.PAUSED) {
+              if (canControl && playerRef.current) {
+                onPause(playerRef.current.getCurrentTime());
+              } else {
+                suppress();
+                if (syncState.playState === 'playing') {
+                  playerRef.current?.playVideo();
+                }
+                onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
+              }
+            }
+          },
+        },
+      });
+    };
+
+    if (window.YT && window.YT.Player) {
+      initPlayer();
+    } else {
+      if (!document.getElementById('yt-iframe-api')) {
+        const tag = document.createElement('script');
+        tag.id = 'yt-iframe-api';
+        tag.src = 'https://www.youtube.com/iframe_api';
+        document.body.appendChild(tag);
+      }
+      checkInterval = setInterval(() => {
+        if (window.YT && window.YT.Player) {
+          clearInterval(checkInterval);
+          initPlayer();
+        }
+      }, 100);
+    }
+
+    return () => {
+      if (checkInterval) clearInterval(checkInterval);
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        playerRef.current.destroy();
+        playerRef.current = null;
+      }
+    };
+  }, []);
+
   return (
-    <div className="yt-wrapper">
-      <div className="yt-player-container" style={{ width: '100%', height: '100%' }}>
-        <div ref={playerMountRef} style={{ width: '100%', height: '100%' }} />
-        {isLoading && (
-          <div className="video-loading-overlay">
-            <div className="loading-spinner"></div>
-            <span>Loading video...</span>
-          </div>
-        )}
-        {error && (
-          <div className="video-error-overlay">
-            <span className="error-icon">⚠️</span>
-            <span className="error-message">{error}</span>
-            <button
-              className="retry-btn"
-              onClick={() => {
-                setError(null);
-                setIsLoading(true);
-                window.location.reload();
-              }}
-            >
-              Retry
-            </button>
-          </div>
-        )}
-      </div>
+    <div className="yt-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
+      <div ref={containerRef} className="yt-player-container" style={{ width: '100%', height: '100%' }} />
+
+      {needsUnmute && (
+        <div className="unmute-banner" onClick={handleUnmute}>
+          <span>🔊 Click anywhere to Unmute Audio & Sync</span>
+        </div>
+      )}
 
       {!canControl && (
-        <div className="viewer-overlay">
-          <span className="viewer-badge">👁 Viewer Mode</span>
+        <div
+          className="viewer-click-shield"
+          onClick={() => {
+            if (needsUnmute) {
+              handleUnmute();
+            } else {
+              onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
+            }
+          }}
+        >
+          <div className="viewer-overlay">
+            <span className="viewer-badge">👁 Viewer Mode</span>
+          </div>
         </div>
       )}
     </div>

@@ -215,19 +215,12 @@ class EventRouter {
   _onChangeVideo(socket, { videoId } = {}) {
     const { room } = this._getRoomAndParticipant(socket);
     if (!room || !this._requireControlPermission(socket, room)) return;
-    
     if (!videoId || typeof videoId !== 'string') {
-      socket.emit('error_event', { message: 'Invalid video ID format.' });
-      return;
-    }
-    
-    const id = videoId.trim();
-    if (!/^[a-zA-Z0-9_-]{11}$/.test(id)) {
-      socket.emit('error_event', { message: 'Invalid video ID. Must be exactly 11 characters.' });
+      socket.emit('error_event', { message: 'Invalid video ID.' });
       return;
     }
 
-    room.updateVideoState({ videoId: id, playState: 'paused', currentTime: 0 });
+    room.updateVideoState({ videoId: videoId.trim(), playState: 'paused', currentTime: 0 });
     room.broadcast('sync_state', { ...room.currentSyncPayload(), triggeredBy: socket.id });
     console.log(`[change_video] room ${room.roomId} → ${videoId}`);
   }
