@@ -81,17 +81,19 @@ class Room {
 
     // Persist to MongoDB asynchronously if connected
     const ChatMessageModel = require('../models/ChatMessageModel');
-    const { getIsConnected } = require('../config/db');
-    if (getIsConnected()) {
-      ChatMessageModel.create({
-        roomId: this.roomId,
-        userId: msg.userId,
-        username: msg.username,
-        role: msg.role,
-        message: msg.message,
-        timestamp: msg.timestamp,
-      }).catch((err) => console.warn('[DB] Failed to persist chat message:', err.message));
-    }
+    const { ensureDBConnection } = require('../config/db');
+    ensureDBConnection().then(isConnected => {
+      if (isConnected) {
+        ChatMessageModel.create({
+          roomId: this.roomId,
+          userId: msg.userId,
+          username: msg.username,
+          role: msg.role,
+          message: msg.message,
+          timestamp: msg.timestamp,
+        }).catch((err) => console.warn('[DB] Failed to persist chat message:', err.message));
+      }
+    }).catch(console.error);
   }
 
   // ─── Queue Management ──────────────────────────────────────────────────────
@@ -157,14 +159,16 @@ class Room {
   persistRoomState() {
     // Persist to MongoDB asynchronously if connected
     const RoomModel = require('../models/RoomModel');
-    const { getIsConnected } = require('../config/db');
-    if (getIsConnected()) {
-      RoomModel.findOneAndUpdate(
-        { roomId: this.roomId },
-        { videoState: this.videoState, queue: this.queue, lastActiveAt: new Date() },
-        { upsert: true }
-      ).catch((err) => console.warn('[DB] Failed to persist room state:', err.message));
-    }
+    const { ensureDBConnection } = require('../config/db');
+    ensureDBConnection().then(isConnected => {
+      if (isConnected) {
+        RoomModel.findOneAndUpdate(
+          { roomId: this.roomId },
+          { videoState: this.videoState, queue: this.queue, lastActiveAt: new Date() },
+          { upsert: true }
+        ).catch((err) => console.warn('[DB] Failed to persist room state:', err.message));
+      }
+    }).catch(console.error);
   }
 
   currentSyncPayload() {

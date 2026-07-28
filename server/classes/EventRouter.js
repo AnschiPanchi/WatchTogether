@@ -107,8 +107,9 @@ class EventRouter {
       if (!room) {
         const RoomModel = require('../models/RoomModel');
         const ChatMessageModel = require('../models/ChatMessageModel');
-        const { getIsConnected } = require('../config/db');
-        if (getIsConnected()) {
+        const { ensureDBConnection } = require('../config/db');
+        const isConnected = await ensureDBConnection();
+        if (isConnected) {
           try {
             const dbRoom = await RoomModel.findOne({ roomId });
             if (dbRoom) {
@@ -209,14 +210,16 @@ class EventRouter {
       
       const RoomModel = require('../models/RoomModel');
       const ChatMessageModel = require('../models/ChatMessageModel');
-      const { getIsConnected } = require('../config/db');
+      const { ensureDBConnection } = require('../config/db');
       
-      if (getIsConnected()) {
-        RoomModel.deleteOne({ roomId: room.roomId })
-          .catch(err => console.warn('[DB] Failed to delete closed room:', err.message));
-        ChatMessageModel.deleteMany({ roomId: room.roomId })
-          .catch(err => console.warn('[DB] Failed to delete closed room chat history:', err.message));
-      }
+      ensureDBConnection().then(isConnected => {
+        if (isConnected) {
+          RoomModel.deleteOne({ roomId: room.roomId })
+            .catch(err => console.warn('[DB] Failed to delete closed room:', err.message));
+          ChatMessageModel.deleteMany({ roomId: room.roomId })
+            .catch(err => console.warn('[DB] Failed to delete closed room chat history:', err.message));
+        }
+      });
       return;
     }
 
