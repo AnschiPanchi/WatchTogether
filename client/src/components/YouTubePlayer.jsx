@@ -46,6 +46,7 @@ export default function YouTubePlayer({
     // Check videoId change
     if (state.videoId !== currentVideoIdRef.current) {
       currentVideoIdRef.current = state.videoId;
+      lastTimeRef.current = state.currentTime;
       suppress(1500);
       if (state.playState === 'playing') {
         player.loadVideoById(state.videoId, state.currentTime);
@@ -55,10 +56,11 @@ export default function YouTubePlayer({
       return;
     }
 
-    // Ultra-fast drift check (> 0.75s) to keep all participants strictly in sync
+    // Drift check (> 1.5s) to keep all participants strictly in sync without stutter loops
     const currentTime = typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : 0;
-    if (Math.abs(currentTime - state.currentTime) > 0.75) {
+    if (Math.abs(currentTime - state.currentTime) > 1.5) {
       suppress(800);
+      lastTimeRef.current = state.currentTime;
       if (typeof player.seekTo === 'function') {
         player.seekTo(state.currentTime, true);
       }
@@ -192,6 +194,11 @@ export default function YouTubePlayer({
 
     return () => {
       if (checkInterval) clearInterval(checkInterval);
+      if (playerRef.current && typeof playerRef.current.destroy === 'function') {
+        playerRef.current.destroy();
+        playerRef.current = null;
+        isReadyRef.current = false;
+      }
     };
   }, [syncState.videoId, canControl]);
 
