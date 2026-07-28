@@ -44,7 +44,7 @@ const QUICK_PICKS = [
   { id: 'fJ9rUzIMcZQ', title: 'Queen – Bohemian Rhapsody' },
 ];
 
-export default function VideoSearch({ onSelect, onAddToQueue, onClose, canControl }) {
+export default function VideoSearch({ onSelect, onAddToQueue, onClose, canControl, isMobile = false }) {
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
 
@@ -79,103 +79,113 @@ export default function VideoSearch({ onSelect, onAddToQueue, onClose, canContro
     setError('');
   };
 
-  return (
-    <div className="search-overlay" role="dialog" aria-modal="true" aria-label="Add or change video">
-      <div className="search-modal">
-        {/* Header */}
+  const content = (
+    <div className="search-modal" style={isMobile ? { width: '100%', maxWidth: 'none', background: 'transparent', border: 'none', boxShadow: 'none', padding: '8px 4px', animation: 'none' } : {}}>
+      {/* Header */}
+      {!isMobile && (
         <div className="search-header">
           <h2 className="search-title gradient-text">Add Video</h2>
           <button id="close-search-btn" className="close-btn" onClick={onClose} aria-label="Close">✕</button>
         </div>
+      )}
 
-        {/* URL / ID input */}
-        <div className="search-input-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
-          <input
-            id="video-url-input"
-            className="search-modal-input"
-            type="text"
-            placeholder="Paste a YouTube URL or video ID…"
-            value={input}
-            onChange={(e) => { setInput(e.target.value); setError(''); }}
-            onKeyDown={(e) => e.key === 'Enter' && handleQueue()}
-            autoFocus
-            style={{ flex: '1 1 200px' }}
-          />
+      {/* URL / ID input */}
+      <div className="search-input-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+        <input
+          id="video-url-input"
+          className="search-modal-input"
+          type="text"
+          placeholder="Paste a YouTube URL or video ID…"
+          value={input}
+          onChange={(e) => { setInput(e.target.value); setError(''); }}
+          onKeyDown={(e) => e.key === 'Enter' && handleQueue()}
+          autoFocus
+          style={{ flex: '1 1 200px' }}
+        />
 
+        <button
+          id="queue-video-btn"
+          className="search-modal-btn"
+          onClick={() => handleQueue()}
+          style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
+        >
+          + Add to Queue
+        </button>
+
+        {!isMobile && canControl && (
           <button
-            id="queue-video-btn"
+            id="load-video-btn"
             className="search-modal-btn"
-            onClick={() => handleQueue()}
-            style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
+            onClick={() => handlePlayNow()}
           >
-            + Add to Queue
+            Play Now
           </button>
+        )}
+      </div>
 
-          {canControl && (
-            <button
-              id="load-video-btn"
-              className="search-modal-btn"
-              onClick={() => handlePlayNow()}
-            >
-              Play Now
-            </button>
-          )}
-        </div>
+      {error && <p className="error-msg" role="alert">{error}</p>}
 
-        {error && <p className="error-msg" role="alert">{error}</p>}
+      {/* Quick-pick grid */}
+      <p className="suggestions-label">Quick picks</p>
+      <div className="suggestions-grid">
+        {QUICK_PICKS.map((v) => (
+          <div key={v.id} className="suggestion-card" style={{ position: 'relative' }}>
+            <img
+              src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`}
+              alt={v.title}
+              loading="lazy"
+            />
+            <span>{v.title}</span>
 
-        {/* Quick-pick grid */}
-        <p className="suggestions-label">Quick picks</p>
-        <div className="suggestions-grid">
-          {QUICK_PICKS.map((v) => (
-            <div key={v.id} className="suggestion-card" style={{ position: 'relative' }}>
-              <img
-                src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`}
-                alt={v.title}
-                loading="lazy"
-              />
-              <span>{v.title}</span>
-
-              <div style={{ display: 'flex', gap: '4px', marginTop: '6px', width: '100%' }}>
+            <div style={{ display: 'flex', gap: '4px', marginTop: '6px', width: '100%' }}>
+              <button
+                onClick={() => handleQueue(v.id)}
+                style={{
+                  flex: 1,
+                  padding: '4px 6px',
+                  fontSize: '0.75rem',
+                  background: 'rgba(16, 185, 129, 0.2)',
+                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                  color: '#6ee7b7',
+                  borderRadius: '4px',
+                  cursor: 'pointer',
+                  fontWeight: 600,
+                }}
+              >
+                + Queue
+              </button>
+              {!isMobile && canControl && (
                 <button
-                  onClick={() => handleQueue(v.id)}
+                  onClick={() => handlePlayNow(v.id)}
                   style={{
                     flex: 1,
                     padding: '4px 6px',
                     fontSize: '0.75rem',
-                    background: 'rgba(16, 185, 129, 0.2)',
-                    border: '1px solid rgba(16, 185, 129, 0.4)',
-                    color: '#6ee7b7',
+                    background: 'rgba(99, 102, 241, 0.2)',
+                    border: '1px solid rgba(99, 102, 241, 0.4)',
+                    color: '#a5b4fc',
                     borderRadius: '4px',
                     cursor: 'pointer',
                     fontWeight: 600,
                   }}
                 >
-                  + Queue
+                  ▶ Play
                 </button>
-                {canControl && (
-                  <button
-                    onClick={() => handlePlayNow(v.id)}
-                    style={{
-                      flex: 1,
-                      padding: '4px 6px',
-                      fontSize: '0.75rem',
-                      background: 'rgba(99, 102, 241, 0.2)',
-                      border: '1px solid rgba(99, 102, 241, 0.4)',
-                      color: '#a5b4fc',
-                      borderRadius: '4px',
-                      cursor: 'pointer',
-                      fontWeight: 600,
-                    }}
-                  >
-                    ▶ Play
-                  </button>
-                )}
-              </div>
+              )}
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
       </div>
+    </div>
+  );
+
+  if (isMobile) {
+    return content;
+  }
+
+  return (
+    <div className="search-overlay" role="dialog" aria-modal="true" aria-label="Add or change video">
+      {content}
     </div>
   );
 }

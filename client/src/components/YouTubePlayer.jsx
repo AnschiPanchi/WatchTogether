@@ -15,6 +15,7 @@ export default function YouTubePlayer({
   const isReadyRef = useRef(false);
   const currentVideoIdRef = useRef(syncState.videoId);
   const lastTimeRef = useRef(syncState.currentTime);
+  const endedRef = useRef(false);
 
   const suppress = (ms = 800) => {
     suppressUntilRef.current = Date.now() + ms;
@@ -23,9 +24,19 @@ export default function YouTubePlayer({
   const isSuppressed = () => Date.now() < suppressUntilRef.current;
 
   const canControlRef = useRef(canControl);
+  const onPlayRef = useRef(onPlay);
+  const onPauseRef = useRef(onPause);
+  const onSeekRef = useRef(onSeek);
+  const onEndedRef = useRef(onEnded);
+  const onPermissionDeniedRef = useRef(onPermissionDenied);
   useEffect(() => {
     canControlRef.current = canControl;
-  }, [canControl]);
+    onPlayRef.current = onPlay;
+    onPauseRef.current = onPause;
+    onSeekRef.current = onSeek;
+    onEndedRef.current = onEnded;
+    onPermissionDeniedRef.current = onPermissionDenied;
+  });
 
   const [needsUnmute, setNeedsUnmute] = useState(false);
 
@@ -47,7 +58,8 @@ export default function YouTubePlayer({
     if (state.videoId !== currentVideoIdRef.current) {
       currentVideoIdRef.current = state.videoId;
       lastTimeRef.current = state.currentTime;
-      suppress(1500);
+      endedRef.current = false; // Reset ended flag for new video
+      suppress(2000);
       if (state.playState === 'playing') {
         player.loadVideoById(state.videoId, state.currentTime);
       } else {
@@ -55,6 +67,9 @@ export default function YouTubePlayer({
       }
       return;
     }
+
+    // If video has ended locally, ignore all sync updates until videoId changes
+    if (endedRef.current) return;
 
     // Drift check (> 1.5s) to keep all participants strictly in sync without stutter loops
     const currentTime = typeof player.getCurrentTime === 'function' ? player.getCurrentTime() : 0;
@@ -110,6 +125,7 @@ export default function YouTubePlayer({
           autoplay: syncState.playState === 'playing' ? 1 : 0,
           controls: 1,
           fs: 1,
+          loop: 0,
           playsinline: 1,
           enablejsapi: 1,
           modestbranding: 1,
@@ -128,16 +144,35 @@ export default function YouTubePlayer({
           onStateChange: (event) => {
             if (isSuppressed()) return;
 
+            // If video already ended, block all state changes until new video loads
+            if (endedRef.current) return;
+
+            // Handle ENDED first, before any other processing
+            if (event.data === window.YT.PlayerState.ENDED) {
+              endedRef.current = true;
+              suppress(5000); // Suppress everything for 5s while next_video processes
+              onEndedRef.current?.();
+              return;
+            }
+
             const curTime = playerRef.current && typeof playerRef.current.getCurrentTime === 'function'
               ? playerRef.current.getCurrentTime()
               : 0;
 
+            const duration = playerRef.current && typeof playerRef.current.getDuration === 'function'
+              ? playerRef.current.getDuration()
+              : 0;
+
             // Check if user manually jumped/seeked time (> 2s difference from last known time)
-            if (Math.abs(curTime - lastTimeRef.current) > 2) {
+            // Ignore seek check near the end of video (within 4 seconds of duration)
+            // Ignore seek check when curTime is near 0 (video restart/loop detection)
+            const nearEnd = duration > 0 && curTime >= duration - 4;
+            const nearStart = curTime < 2;
+            if (!nearEnd && !nearStart && Math.abs(curTime - lastTimeRef.current) > 2) {
               lastTimeRef.current = curTime;
               if (canControlRef.current) {
                 suppress(1200);
-                onSeek?.(curTime);
+                onSeekRef.current?.(curTime);
               }
             } else {
               lastTimeRef.current = curTime;
@@ -146,28 +181,24 @@ export default function YouTubePlayer({
             if (event.data === window.YT.PlayerState.PLAYING) {
               if (canControlRef.current) {
                 suppress(1200);
-                onPlay();
+                onPlayRef.current();
               } else {
                 suppress();
                 if (syncState.playState === 'paused') {
                   playerRef.current?.pauseVideo();
                 }
-                onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
+                onPermissionDeniedRef.current?.('🔒 Only the Host or a Moderator can play or pause the video.');
               }
             } else if (event.data === window.YT.PlayerState.PAUSED) {
               if (canControlRef.current && playerRef.current) {
                 suppress(1200);
-                onPause(curTime);
+                onPauseRef.current(curTime);
               } else {
                 suppress();
                 if (syncState.playState === 'playing') {
                   playerRef.current?.playVideo();
                 }
-                onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
-              }
-            } else if (event.data === window.YT.PlayerState.ENDED) {
-              if (canControlRef.current) {
-                onEnded?.();
+                onPermissionDeniedRef.current?.('🔒 Only the Host or a Moderator can play or pause the video.');
               }
             }
           },
@@ -200,7 +231,7 @@ export default function YouTubePlayer({
         isReadyRef.current = false;
       }
     };
-  }, [syncState.videoId, canControl]);
+  }, [syncState.videoId]);
 
   if (!syncState.videoId) {
     return (

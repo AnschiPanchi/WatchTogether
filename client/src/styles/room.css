@@ -841,14 +841,7 @@
     font-size: 12px;
   }
 
-  /* Show Play/Pause FAB on Mobile */
-  .host-control-fab {
-    display: flex !important;
-    bottom: 12px;
-    right: 12px;
-    padding: 8px 16px;
-    font-size: 13px;
-  }
+
 
   /* Hide Desktop Side Nav Wrappers in Portrait */
   .hud-left-wrapper,

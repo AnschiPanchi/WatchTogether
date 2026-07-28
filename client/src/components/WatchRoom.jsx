@@ -147,9 +147,7 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
   };
 
   const handleVideoEnded = () => {
-    if (queue.length > 0) {
-      socket.emit('next_video', {});
-    }
+    socket.emit('next_video', {});
   };
 
   const handleLeave = () => { socket.emit('leave_room', { roomId: initial.roomId }); onLeave(); };

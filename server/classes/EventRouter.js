@@ -325,13 +325,19 @@ class EventRouter {
     const { room } = this._getRoomAndParticipant(socket);
     if (!room) return;
 
+    // Prevent duplicate next_video triggers within 2 seconds for the same room
+    const now = Date.now();
+    if (room._lastNextTriggeredAt && now - room._lastNextTriggeredAt < 2000) {
+      return;
+    }
+    room._lastNextTriggeredAt = now;
+
     const nextItem = room.popNextVideoFromQueue();
     if (nextItem) {
       room.broadcast('sync_state', { ...room.currentSyncPayload(), triggeredBy: socket.id });
-      console.log(`[queue:next] room ${room.roomId} playing next: ${nextItem.videoId}`);
-    } else {
-      socket.emit('error_event', { message: 'The queue is empty.' });
+      console.log(`[queue:next] room ${room.roomId} playing next video: ${nextItem.videoId} (${nextItem.title})`);
     }
+    // If queue is empty, silently ignore — all participants emit next_video on end
   }
 
   _onAssignRole(socket, { userId, role } = {}) {

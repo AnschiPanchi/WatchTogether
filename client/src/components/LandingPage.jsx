@@ -113,10 +113,6 @@ export default function LandingPage({ onJoined }) {
         <main className="landing-main-layout">
           {/* Left Column: ReactBits Animated Hero Info */}
           <section className="landing-info-col">
-            <div className="info-badge theme-yg-badge">
-              <Sparkles size={14} className="badge-sparkle-icon" />
-              <ShinyText text="Real-Time YouTube Theater" speed={3} />
-            </div>
             <h1 className="info-heading">
               Watch YouTube Together,{' '}
               <ShinyText text="Perfectly in Sync." className="theme-yg-gradient-text" speed={4} />
