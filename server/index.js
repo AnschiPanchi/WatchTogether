@@ -17,17 +17,16 @@ const app = express();
 const httpServer = http.createServer(app);
 
 // ─── CORS ─────────────────────────────────────────────────────────────────────
-const allowedOrigins = process.env.CLIENT_URL
-  ? [process.env.CLIENT_URL]
-  : ['http://localhost:5173', 'http://localhost:4173', 'http://localhost:3000'];
-
-app.use(cors({ origin: allowedOrigins, credentials: true }));
+app.use(cors({ 
+  origin: (origin, callback) => callback(null, true), 
+  credentials: true 
+}));
 app.use(express.json());
 
 // ─── Socket.IO ────────────────────────────────────────────────────────────────
 const io = new Server(httpServer, {
   cors: {
-    origin: allowedOrigins,
+    origin: (origin, callback) => callback(null, true),
     methods: ['GET', 'POST'],
     credentials: true,
   },

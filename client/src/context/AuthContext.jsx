@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, useCallback } from 'rea
 
 const AuthContext = createContext(null);
 
-const API_BASE = import.meta.env.VITE_SERVER_URL || 'http://localhost:3001';
+const API_BASE = import.meta.env.VITE_SERVER_URL || (import.meta.env.PROD ? '' : 'http://localhost:3001');
 const TOKEN_KEY = 'watchparty_token';
 
 export function AuthProvider({ children }) {
