@@ -4,14 +4,14 @@ const http = require('http');
 const { Server } = require('socket.io');
 const cors = require('cors');
 const path = require('path');
-const { connectDB } = require('./config/db');
+const { ensureDBConnection } = require('./config/db');
 const EventRouter = require('./classes/EventRouter');
 const authRoutes = require('./routes/authRoutes');
 
 const PORT = process.env.PORT || 3001;
 
-// Connect to MongoDB
-connectDB();
+// Pre-warm MongoDB connection for serverless environments
+ensureDBConnection().catch(console.error);
 
 const app = express();
 const httpServer = http.createServer(app);
