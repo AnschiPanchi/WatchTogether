@@ -1,19 +1,31 @@
 import { useState, useRef, useEffect } from 'react';
 import { getSocket } from '../services/socket';
+import { useAuth } from '../context/AuthContext';
+import AuthModal from './AuthModal';
 import Particles from './reactbits/Particles';
 import ShinyText from './reactbits/ShinyText';
 import SpotlightCard from './reactbits/SpotlightCard';
 import TiltedCard from './reactbits/TiltedCard';
 import MagnetButton from './reactbits/MagnetButton';
 import Aurora from './reactbits/Aurora';
-import { Play, Sparkles, Zap, MessageSquare, Shield, Share2, User, Key } from 'lucide-react';
+import { Play, Sparkles, Zap, MessageSquare, Shield, Share2, User, Key, LogIn, LogOut } from 'lucide-react';
 
 export default function LandingPage({ onJoined }) {
+  const { user, logout, loading: authLoading } = useAuth();
+  const [showAuthModal, setShowAuthModal] = useState(false);
+
   const [username, setUsername] = useState('');
   const [roomCode, setRoomCode] = useState('');
   const [tab, setTab] = useState('create');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Auto-fill username from logged-in account
+  useEffect(() => {
+    if (user?.username) {
+      setUsername(user.username);
+    }
+  }, [user]);
 
   // Check URL parameters or path on initial load (e.g. ?room=BED104A9 or /room/BED104A9 or /BED104A9)
   useEffect(() => {
@@ -107,6 +119,30 @@ export default function LandingPage({ onJoined }) {
             <span className="logo-title theme-yg-title">
               WatchParty
             </span>
+          </div>
+
+          {/* Auth Section — Sign In / User Badge */}
+          <div className="auth-nav-section">
+            {authLoading ? null : user ? (
+              <>
+                <div className="auth-user-badge">
+                  <div className="auth-user-avatar">
+                    {user.username.charAt(0)}
+                  </div>
+                  <span className="auth-user-name">{user.username}</span>
+                </div>
+                <button className="auth-signout-btn" onClick={logout}>
+                  <LogOut size={13} /> Sign Out
+                </button>
+              </>
+            ) : (
+              <button
+                className="auth-nav-btn"
+                onClick={() => setShowAuthModal(true)}
+              >
+                <LogIn size={14} /> Sign In
+              </button>
+            )}
           </div>
         </header>
 
@@ -209,13 +245,18 @@ export default function LandingPage({ onJoined }) {
                 <div className="form-group">
                   <label htmlFor="username-input" className="form-label">
                     <User size={12} style={{ display: 'inline', marginRight: 4 }} /> Your Display Name
+                    {user && (
+                      <span className="username-locked-badge">
+                        ✓ Signed in
+                      </span>
+                    )}
                   </label>
                   <div className="input-wrap">
                     <input
                       id="username-input"
                       className="input-field"
                       type="text"
-                      placeholder="How should we call you?"
+                      placeholder={user ? user.username : 'How should we call you?'}
                       value={username}
                       maxLength={32}
                       autoComplete="off"
@@ -264,13 +305,20 @@ export default function LandingPage({ onJoined }) {
                 </MagnetButton>
 
                 <p className="landing-hint" style={{ marginTop: '16px' }}>
-                  No account needed. Instant room access.
+                  {user
+                    ? `Signed in as ${user.username} ✨`
+                    : 'No account needed. Instant room access.'}
                 </p>
               </SpotlightCard>
             </TiltedCard>
           </section>
         </main>
       </div>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <AuthModal onClose={() => setShowAuthModal(false)} />
+      )}
     </div>
   );
 }

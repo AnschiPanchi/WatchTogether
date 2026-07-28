@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { AuthProvider } from './context/AuthContext';
 import LandingPage from './components/LandingPage';
 import WatchRoom from './components/WatchRoom';
 import './index.css';
@@ -15,12 +16,12 @@ export default function App() {
   }, []);
 
   return (
-    <>
+    <AuthProvider>
       {roomState ? (
         <WatchRoom roomState={roomState} onLeave={handleLeave} />
       ) : (
         <LandingPage onJoined={handleJoined} />
       )}
-    </>
+    </AuthProvider>
   );
 }

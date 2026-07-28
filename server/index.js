@@ -6,6 +6,7 @@ const cors = require('cors');
 const path = require('path');
 const { connectDB } = require('./config/db');
 const EventRouter = require('./classes/EventRouter');
+const authRoutes = require('./routes/authRoutes');
 
 const PORT = process.env.PORT || 3001;
 
@@ -45,6 +46,9 @@ app.get('/api/room/:roomId', (req, res) => {
   if (!info) return res.status(404).json({ error: 'Room not found' });
   res.json(info);
 });
+
+// ─── Auth Routes ──────────────────────────────────────────────────────────────
+app.use('/api/auth', authRoutes);
 
 // ─── Serve static frontend in production ──────────────────────────────────────
 if (process.env.NODE_ENV === 'production') {

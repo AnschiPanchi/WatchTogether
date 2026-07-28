@@ -1,0 +1,423 @@
+/* ── Auth Modal Styles ─────────────────────────────────────────────── */
+
+/* Overlay / Backdrop */
+.auth-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(3, 10, 6, 0.82);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9000;
+  animation: auth-fade-in 0.25s ease;
+}
+
+@keyframes auth-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* Modal Card */
+.auth-modal {
+  width: min(440px, 92vw);
+  background: linear-gradient(160deg, #092013 0%, #04120a 60%, #06180d 100%);
+  border: 2px solid rgba(48, 216, 112, 0.45);
+  border-radius: 24px;
+  box-shadow:
+    0 0 0 1px rgba(255, 208, 96, 0.2),
+    0 0 60px rgba(48, 216, 112, 0.2),
+    0 32px 80px rgba(0, 0, 0, 0.85),
+    inset 0 1px 0 rgba(255, 220, 120, 0.15);
+  padding: 28px 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  animation: auth-slide-up 0.35s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+/* Subtle shimmer glow at the top edge */
+.auth-modal::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 10%;
+  right: 10%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255, 208, 96, 0.6), rgba(48, 216, 112, 0.6), transparent);
+}
+
+@keyframes auth-slide-up {
+  from { opacity: 0; transform: translateY(24px) scale(0.96); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* ── Header ──────────────────────────────────────────────────────── */
+.auth-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.auth-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-icon-wrap {
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #ffd060, #e08c10);
+  border: 1.5px solid rgba(255, 220, 100, 0.7);
+  box-shadow: 0 0 18px rgba(244, 168, 32, 0.5), 0 4px 12px rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0d1e38;
+  flex-shrink: 0;
+}
+
+.auth-title {
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 20px;
+  color: #ffffff;
+  margin: 0;
+  line-height: 1.2;
+  text-shadow: 0 0 12px rgba(255, 208, 96, 0.4);
+}
+
+.auth-subtitle {
+  font-size: 12px;
+  color: #9cbca6;
+  margin: 2px 0 0;
+  font-weight: 600;
+}
+
+.auth-close-btn {
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(48, 216, 112, 0.3);
+  border-radius: 8px;
+  color: #88aa92;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.auth-close-btn:hover {
+  color: #ff8090;
+  border-color: rgba(232, 48, 64, 0.5);
+  background: rgba(232, 48, 64, 0.1);
+}
+
+/* ── Tabs ─────────────────────────────────────────────────────────── */
+.auth-tabs {
+  display: flex;
+  gap: 6px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(48, 216, 112, 0.3);
+  border-radius: 12px;
+  padding: 5px;
+}
+
+.auth-tab {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.5px;
+  border: none;
+  border-radius: 8px;
+  padding: 9px;
+  background: transparent;
+  color: #88aa92;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-tab:hover:not(.active) {
+  color: #b8d4c0;
+  background: rgba(48, 216, 112, 0.08);
+}
+
+.auth-tab.active {
+  background: linear-gradient(135deg, #ffd060 0%, #e08c10 100%);
+  color: #0d1e38;
+  box-shadow: 0 0 16px rgba(244, 168, 32, 0.6);
+}
+
+/* ── Form ─────────────────────────────────────────────────────────── */
+.auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.auth-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.auth-label {
+  font-size: 11px;
+  font-weight: 700;
+  color: #b8d4c0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.auth-input-wrap {
+  position: relative;
+}
+
+.auth-input {
+  width: 100%;
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(48, 216, 112, 0.35);
+  border-radius: 10px;
+  padding: 11px 14px;
+  color: #ffffff;
+  font-size: 14px;
+  font-family: 'Nunito', sans-serif;
+  font-weight: 600;
+  outline: none;
+  transition: all 0.2s ease;
+}
+
+.auth-input:focus {
+  border-color: #ffd060;
+  box-shadow: 0 0 0 3px rgba(255, 208, 96, 0.25);
+}
+
+.auth-input::placeholder {
+  color: #5a7e66;
+}
+
+/* ── Error ────────────────────────────────────────────────────────── */
+.auth-error {
+  color: #ff8090;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 8px 12px;
+  background: rgba(232, 48, 64, 0.1);
+  border: 1px solid rgba(232, 48, 64, 0.3);
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+}
+
+.auth-error::before {
+  content: '⚠';
+  font-size: 14px;
+}
+
+/* ── Submit Button ────────────────────────────────────────────────── */
+.auth-submit-btn {
+  width: 100%;
+  padding: 13px;
+  margin-top: 2px;
+  border-radius: 12px;
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 15px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  border: 1px solid rgba(255, 208, 96, 0.6);
+  background: linear-gradient(135deg, #30d870 0%, #10b8a8 100%);
+  color: #04140b;
+  box-shadow: 0 0 20px rgba(48, 216, 112, 0.5), 0 4px 12px rgba(0, 0, 0, 0.6);
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.auth-submit-btn:hover:not(:disabled) {
+  background: linear-gradient(135deg, #ffd060 0%, #f4a820 100%);
+  color: #06180d;
+  box-shadow: 0 0 28px rgba(255, 208, 96, 0.8), 0 6px 16px rgba(0, 0, 0, 0.7);
+}
+
+.auth-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ── Footer Hint ──────────────────────────────────────────────────── */
+.auth-footer-hint {
+  font-size: 12px;
+  color: #5a7e66;
+  text-align: center;
+  font-weight: 600;
+  margin: 0;
+}
+
+/* ── Header Auth Button (Landing Nav) ─────────────────────────────── */
+.auth-nav-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auth-nav-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 18px;
+  border-radius: 10px;
+  font-family: 'Fredoka One', cursive, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+  cursor: pointer;
+  border: 1.5px solid rgba(48, 216, 112, 0.5);
+  background: rgba(48, 216, 112, 0.1);
+  color: #30d870;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(6px);
+}
+
+.auth-nav-btn:hover {
+  background: rgba(48, 216, 112, 0.2);
+  border-color: rgba(48, 216, 112, 0.8);
+  box-shadow: 0 0 20px rgba(48, 216, 112, 0.3);
+  transform: translateY(-1px);
+}
+
+/* Logged-in user badge in the header */
+.auth-user-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 10px;
+  background: rgba(48, 216, 112, 0.1);
+  border: 1.5px solid rgba(48, 216, 112, 0.4);
+  backdrop-filter: blur(6px);
+}
+
+.auth-user-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #ffd060, #e08c10);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'Fredoka One', cursive;
+  font-size: 13px;
+  color: #0d1e38;
+  font-weight: 800;
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.auth-user-name {
+  font-size: 13px;
+  font-weight: 700;
+  color: #e0f0e6;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auth-signout-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-family: 'Nunito', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  border: 1px solid rgba(232, 48, 64, 0.35);
+  background: rgba(232, 48, 64, 0.1);
+  color: #ff8090;
+  transition: all 0.2s ease;
+}
+
+.auth-signout-btn:hover {
+  background: rgba(232, 48, 64, 0.2);
+  border-color: rgba(232, 48, 64, 0.6);
+  box-shadow: 0 0 14px rgba(232, 48, 64, 0.25);
+}
+
+/* ── Logged-in indicator on the username field ────────────────────── */
+.username-locked-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #30d870;
+  margin-left: 8px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  background: rgba(48, 216, 112, 0.12);
+  border: 1px solid rgba(48, 216, 112, 0.3);
+}
+
+/* ── Spinner (shared) ─────────────────────────────────────────────── */
+.spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid transparent;
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: auth-spin 0.6s linear infinite;
+}
+
+@keyframes auth-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .auth-modal {
+    width: 94vw;
+    padding: 20px 16px 18px;
+    gap: 14px;
+  }
+
+  .auth-title {
+    font-size: 17px;
+  }
+
+  .auth-nav-section {
+    gap: 8px;
+  }
+
+  .auth-nav-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+
+  .auth-user-badge {
+    padding: 5px 10px;
+  }
+
+  .auth-user-name {
+    max-width: 70px;
+    font-size: 12px;
+  }
+}

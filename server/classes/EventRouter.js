@@ -206,6 +206,17 @@ class EventRouter {
     if (room.isEmpty()) {
       this.rooms.delete(room.roomId);
       console.log(`[room:closed] ${room.roomId}`);
+      
+      const RoomModel = require('../models/RoomModel');
+      const ChatMessageModel = require('../models/ChatMessageModel');
+      const { getIsConnected } = require('../config/db');
+      
+      if (getIsConnected()) {
+        RoomModel.deleteOne({ roomId: room.roomId })
+          .catch(err => console.warn('[DB] Failed to delete closed room:', err.message));
+        ChatMessageModel.deleteMany({ roomId: room.roomId })
+          .catch(err => console.warn('[DB] Failed to delete closed room chat history:', err.message));
+      }
       return;
     }
 
