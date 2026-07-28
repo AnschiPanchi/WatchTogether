@@ -23,7 +23,7 @@ function extractVideoId(input) {
   const s = input.trim();
   try {
     const url = new URL(s);
-    const v   = url.searchParams.get('v');
+    const v = url.searchParams.get('v');
     if (v) return v;
     if (url.hostname === 'youtu.be') return url.pathname.slice(1).split('?')[0] || null;
   } catch {
@@ -58,7 +58,7 @@ export default function VideoSearch({ onSelect, onAddToQueue, onClose, canContro
   const handleQueue = async (id) => {
     const targetId = id || extractVideoId(input);
     if (!targetId) { setError("Couldn't parse a video ID — try pasting the full YouTube URL."); return; }
-    
+
     const match = QUICK_PICKS.find(p => p.id === targetId);
     let title = match ? match.title : '';
 
@@ -101,7 +101,7 @@ export default function VideoSearch({ onSelect, onAddToQueue, onClose, canContro
             autoFocus
             style={{ flex: '1 1 200px' }}
           />
-          
+
           <button
             id="queue-video-btn"
             className="search-modal-btn"
@@ -135,7 +135,7 @@ export default function VideoSearch({ onSelect, onAddToQueue, onClose, canContro
                 loading="lazy"
               />
               <span>{v.title}</span>
-              
+
               <div style={{ display: 'flex', gap: '4px', marginTop: '6px', width: '100%' }}>
                 <button
                   onClick={() => handleQueue(v.id)}
