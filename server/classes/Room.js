@@ -24,7 +24,11 @@ class Room {
       lastUpdatedAt: Date.now(),
     };
 
+    /** @type {Array<{ id: string, videoId: string, title?: string, addedBy: string, addedByUsername: string, timestamp: number }>} */
+    this.queue = [];
+
     this.createdAt = Date.now();
+    this.lastEmptyAt = null;
     
     /** @type {Array<any>} */
     this.chatHistory = [];
@@ -34,11 +38,15 @@ class Room {
 
   addParticipant(participant) {
     this.participants.set(participant.userId, participant);
+    this.lastEmptyAt = null;
   }
 
   removeParticipant(userId) {
     const p = this.participants.get(userId);
     this.participants.delete(userId);
+    if (this.isEmpty()) {
+      this.lastEmptyAt = Date.now();
+    }
     return p;
   }
 
@@ -86,6 +94,43 @@ class Room {
     }
   }
 
+  // ─── Queue Management ──────────────────────────────────────────────────────
+
+  addVideoToQueue({ id, videoId, title, addedBy, addedByUsername }) {
+    const item = {
+      id: id || Date.now().toString(36) + Math.random().toString(36).substring(2, 6),
+      videoId,
+      title: title || 'YouTube Video',
+      addedBy: addedBy || '',
+      addedByUsername: addedByUsername || 'Anonymous',
+      timestamp: Date.now(),
+    };
+    this.queue.push(item);
+    this.persistRoomState();
+    return item;
+  }
+
+  removeVideoFromQueue(itemId) {
+    const index = this.queue.findIndex(item => item.id === itemId);
+    if (index !== -1) {
+      const removed = this.queue.splice(index, 1)[0];
+      this.persistRoomState();
+      return removed;
+    }
+    return null;
+  }
+
+  popNextVideoFromQueue() {
+    if (this.queue.length === 0) return null;
+    const nextItem = this.queue.shift();
+    this.updateVideoState({
+      videoId: nextItem.videoId,
+      playState: 'playing',
+      currentTime: 0,
+    });
+    return nextItem;
+  }
+
   // ─── Video State ──────────────────────────────────────────────────────────
 
   /**
@@ -106,13 +151,17 @@ class Room {
       lastUpdatedAt: Date.now(),
     };
 
+    this.persistRoomState();
+  }
+
+  persistRoomState() {
     // Persist to MongoDB asynchronously if connected
     const RoomModel = require('../models/RoomModel');
     const { getIsConnected } = require('../config/db');
     if (getIsConnected()) {
       RoomModel.findOneAndUpdate(
         { roomId: this.roomId },
-        { videoState: this.videoState, lastActiveAt: new Date() },
+        { videoState: this.videoState, queue: this.queue, lastActiveAt: new Date() },
         { upsert: true }
       ).catch((err) => console.warn('[DB] Failed to persist room state:', err.message));
     }
@@ -123,6 +172,7 @@ class Room {
       videoId: this.videoState.videoId,
       playState: this.videoState.playState,
       currentTime: this.getEffectiveCurrentTime(),
+      queue: this.queue,
     };
   }
 

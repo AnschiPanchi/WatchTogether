@@ -15,6 +15,7 @@ import YouTubePlayer from './YouTubePlayer';
 import ParticipantList from './ParticipantList';
 import ChatPanel from './ChatPanel';
 import VideoSearch from './VideoSearch';
+import QueuePanel from './QueuePanel';
 
 export default function WatchRoom({ roomState: initial, onLeave }) {
   const socket = getSocket();
@@ -23,6 +24,7 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
   const [participants, setParticipants] = useState(initial.participants);
   const [myRole, setMyRole] = useState(initial.role);
   const [syncState, setSyncState] = useState(initial.syncState);
+  const [queue, setQueue] = useState(initial.syncState.queue || []);
   const [chatMessages, setChatMessages] = useState(initial.chatHistory || []);
 
   const [showLeftNav, setShowLeftNav] = useState(true);
@@ -43,10 +45,29 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
     setTimeout(() => setToast(''), 3000);
   }, []);
 
+  // ── Mobile Background & Visibility Listener ─────────────────────
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        if (!socket.connected) {
+          socket.connect();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [socket]);
+
   // ── Socket events ─────────────────────────────────────────────
   useEffect(() => {
     const onSyncState = (data) => {
       setSyncState(data);
+      if (Array.isArray(data.queue)) {
+        setQueue(data.queue);
+      }
     };
 
     const onUserJoined = (data) => {
@@ -104,10 +125,31 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
 
   const handlePlay = () => socket.emit('play', {});
   const handlePause = (t) => socket.emit('pause', { currentTime: t });
+  const handleSeek = (time) => socket.emit('seek', { time });
 
   const handleChangeVideo = (videoId) => {
     socket.emit('change_video', { videoId });
     setActivePanel(null);
+  };
+
+  const handleAddToQueue = (videoId, title) => {
+    socket.emit('add_to_queue', { videoId, title });
+    showToast('Added video to waiting list!');
+    setActivePanel(null);
+  };
+
+  const handleRemoveQueueItem = (itemId) => {
+    socket.emit('remove_from_queue', { itemId });
+  };
+
+  const handleSkipNext = () => {
+    socket.emit('next_video', {});
+  };
+
+  const handleVideoEnded = () => {
+    if (queue.length > 0) {
+      socket.emit('next_video', {});
+    }
   };
 
   const handleLeave = () => { socket.emit('leave_room', { roomId: initial.roomId }); onLeave(); };
@@ -222,7 +264,8 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
 
   // ── Left nav tiles definition ─────────────────────────────────
   const navTiles = [
-    { id: 'video', icon: '🎬', label: 'Videos', show: canControl, color: 'gold' },
+    { id: 'video', icon: '🎬', label: 'Add Video', show: true, color: 'gold' },
+    { id: 'queue', icon: '📑', label: `Queue (${queue.length})`, show: true, color: 'cyan' },
     { id: 'chat', icon: '💬', label: 'Chat', show: true, color: 'orange' },
   ];
 
@@ -238,6 +281,8 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
           myUserId={socket.id || ''}
           onPlay={handlePlay}
           onPause={handlePause}
+          onSeek={handleSeek}
+          onEnded={handleVideoEnded}
           onPermissionDenied={showToast}
         />
       </div>
@@ -305,8 +350,8 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
           {/* Top-right actions */}
           <div className="hud-top-actions">
             <button id="leave-room-btn" className="hud-action-btn danger" onClick={handleLeave} title="Leave Room">
-              <span>🚪</span>
-              <span className="hab-label">Leave</span>
+              <span style={{ fontSize: '15px' }}>🏃💨</span>
+              <span className="hab-label">Leave Room</span>
             </button>
           </div>
         </header>
@@ -422,8 +467,21 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
         {activePanel === 'video' && (
           <VideoSearch
             onSelect={handleChangeVideo}
+            onAddToQueue={handleAddToQueue}
             onClose={() => setActivePanel(null)}
             canControl={canControl}
+          />
+        )}
+
+        {/* Queue panel modal */}
+        {activePanel === 'queue' && (
+          <QueuePanel
+            queue={queue}
+            onRemoveItem={handleRemoveQueueItem}
+            onSkipNext={handleSkipNext}
+            canControl={canControl}
+            currentSocketId={socket.id || ''}
+            onClose={() => setActivePanel(null)}
           />
         )}
 
@@ -441,19 +499,23 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
             💬 Chat
           </button>
           <button
+            className={`mth-tab ${mobileTab === 'queue' ? 'active' : ''}`}
+            onClick={() => setMobileTab('queue')}
+          >
+            📑 Queue ({queue.length})
+          </button>
+          <button
             className={`mth-tab ${mobileTab === 'players' ? 'active' : ''}`}
             onClick={() => setMobileTab('players')}
           >
             👥 Players ({participants.length})
           </button>
-          {canControl && (
-            <button
-              className={`mth-tab ${mobileTab === 'video' ? 'active' : ''}`}
-              onClick={() => setMobileTab('video')}
-            >
-              🎬 Videos
-            </button>
-          )}
+          <button
+            className={`mth-tab ${mobileTab === 'video' ? 'active' : ''}`}
+            onClick={() => setMobileTab('video')}
+          >
+            🎬 Add Video
+          </button>
         </div>
 
         <div className="mth-content">
@@ -463,6 +525,17 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
               myUserId={socket.id || ''}
               myUsername={initial.username}
               onSend={handleSendChat}
+            />
+          )}
+
+          {mobileTab === 'queue' && (
+            <QueuePanel
+              queue={queue}
+              onRemoveItem={handleRemoveQueueItem}
+              onSkipNext={handleSkipNext}
+              canControl={canControl}
+              currentSocketId={socket.id || ''}
+              onClose={() => setMobileTab('chat')}
             />
           )}
 
@@ -486,9 +559,10 @@ export default function WatchRoom({ roomState: initial, onLeave }) {
             </div>
           )}
 
-          {mobileTab === 'video' && canControl && (
+          {mobileTab === 'video' && (
             <VideoSearch
               onSelect={handleChangeVideo}
+              onAddToQueue={handleAddToQueue}
               onClose={() => setMobileTab('chat')}
               canControl={canControl}
             />

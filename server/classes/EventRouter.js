@@ -33,6 +33,9 @@ class EventRouter {
     socket.on('pause', (data) => this._onPause(socket, data));
     socket.on('seek', (data) => this._onSeek(socket, data));
     socket.on('change_video', (data) => this._onChangeVideo(socket, data));
+    socket.on('add_to_queue', (data) => this._onAddToQueue(socket, data));
+    socket.on('remove_from_queue', (data) => this._onRemoveFromQueue(socket, data));
+    socket.on('next_video', (data) => this._onNextVideo(socket, data));
     socket.on('assign_role', (data) => this._onAssignRole(socket, data));
     socket.on('remove_participant', (data) => this._onRemoveParticipant(socket, data));
     socket.on('transfer_host', (data) => this._onTransferHost(socket, data));
@@ -74,7 +77,7 @@ class EventRouter {
 
   // ─── Event Handlers ───────────────────────────────────────────────────────
 
-  _onJoinRoom(socket, { roomId, username } = {}) {
+  async _onJoinRoom(socket, { roomId, username } = {}) {
     if (!username || typeof username !== 'string') {
       socket.emit('error_event', { message: 'Username is required.' });
       return;
@@ -99,11 +102,60 @@ class EventRouter {
     } else {
       roomId = roomId.toUpperCase();
       room = this.rooms.get(roomId);
+
+      // Hydrate from DB if room is missing in memory
       if (!room) {
-        socket.emit('error_event', { message: 'Room not found.' });
+        const RoomModel = require('../models/RoomModel');
+        const ChatMessageModel = require('../models/ChatMessageModel');
+        const { getIsConnected } = require('../config/db');
+        if (getIsConnected()) {
+          try {
+            const dbRoom = await RoomModel.findOne({ roomId });
+            if (dbRoom) {
+              room = new Room(roomId, this.io);
+              if (dbRoom.videoState) {
+                room.videoState = {
+                  videoId: dbRoom.videoState.videoId || 'dQw4w9WgXcQ',
+                  playState: dbRoom.videoState.playState || 'paused',
+                  currentTime: dbRoom.videoState.currentTime || 0,
+                  lastUpdatedAt: dbRoom.videoState.lastUpdatedAt || Date.now(),
+                };
+              }
+              if (Array.isArray(dbRoom.queue)) {
+                room.queue = dbRoom.queue;
+              }
+              // Hydrate chat history
+              const chats = await ChatMessageModel.find({ roomId }).sort({ timestamp: 1 }).limit(100);
+              room.chatHistory = chats.map(c => ({
+                userId: c.userId,
+                username: c.username,
+                role: c.role,
+                message: c.message,
+                timestamp: c.timestamp,
+              }));
+              this.rooms.set(roomId, room);
+              console.log(`[room:rehydrated] ${roomId} restored from DB`);
+            }
+          } catch (err) {
+            console.warn('[DB] Failed to restore room from database:', err.message);
+          }
+        }
+      }
+
+      if (!room) {
+        socket.emit('error_event', { message: 'Room not found or code expired.' });
         return;
       }
-      role = 'participant';
+
+      // Check if user already exists in this room or if room is empty
+      const existing = room.getParticipant(socket.id);
+      if (existing) {
+        role = existing.role;
+      } else if (room.isEmpty() || !room.getHost()) {
+        role = 'host';
+      } else {
+        role = 'participant';
+      }
     }
 
     const participant = new Participant(socket.id, username, role, socket);
@@ -223,6 +275,63 @@ class EventRouter {
     room.updateVideoState({ videoId: videoId.trim(), playState: 'paused', currentTime: 0 });
     room.broadcast('sync_state', { ...room.currentSyncPayload(), triggeredBy: socket.id });
     console.log(`[change_video] room ${room.roomId} → ${videoId}`);
+  }
+
+  _onAddToQueue(socket, { videoId, title } = {}) {
+    const { room, participant } = this._getRoomAndParticipant(socket);
+    if (!room || !participant) return;
+    if (!videoId || typeof videoId !== 'string') {
+      socket.emit('error_event', { message: 'Invalid video ID.' });
+      return;
+    }
+
+    const item = room.addVideoToQueue({
+      videoId: videoId.trim(),
+      title: title ? String(title).slice(0, 100) : 'YouTube Video',
+      addedBy: socket.id,
+      addedByUsername: participant.username,
+    });
+
+    // If room videoId is currently empty, pop & start playing immediately!
+    if (!room.videoState.videoId) {
+      room.popNextVideoFromQueue();
+    }
+
+    room.broadcast('sync_state', { ...room.currentSyncPayload(), triggeredBy: socket.id });
+    console.log(`[queue:add] ${participant.username} added ${videoId} to room ${room.roomId}`);
+  }
+
+  _onRemoveFromQueue(socket, { itemId } = {}) {
+    const { room, participant } = this._getRoomAndParticipant(socket);
+    if (!room || !participant) return;
+
+    const queueItem = room.queue.find(item => item.id === itemId);
+    if (!queueItem) return;
+
+    const isHostOrMod = participant.canControlPlayback();
+    const isOwner = queueItem.addedBy === socket.id;
+
+    if (!isHostOrMod && !isOwner) {
+      socket.emit('error_event', { message: 'You can only remove videos you added.' });
+      return;
+    }
+
+    room.removeVideoFromQueue(itemId);
+    room.broadcast('sync_state', { ...room.currentSyncPayload(), triggeredBy: socket.id });
+    console.log(`[queue:remove] ${participant.username} removed item ${itemId} from room ${room.roomId}`);
+  }
+
+  _onNextVideo(socket, _data) {
+    const { room } = this._getRoomAndParticipant(socket);
+    if (!room) return;
+
+    const nextItem = room.popNextVideoFromQueue();
+    if (nextItem) {
+      room.broadcast('sync_state', { ...room.currentSyncPayload(), triggeredBy: socket.id });
+      console.log(`[queue:next] room ${room.roomId} playing next: ${nextItem.videoId}`);
+    } else {
+      socket.emit('error_event', { message: 'The queue is empty.' });
+    }
   }
 
   _onAssignRole(socket, { userId, role } = {}) {

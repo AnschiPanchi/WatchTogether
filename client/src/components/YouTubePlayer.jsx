@@ -5,6 +5,8 @@ export default function YouTubePlayer({
   canControl,
   onPlay,
   onPause,
+  onSeek,
+  onEnded,
   onPermissionDenied,
 }) {
   const containerRef = useRef(null);
@@ -12,6 +14,7 @@ export default function YouTubePlayer({
   const suppressUntilRef = useRef(0);
   const isReadyRef = useRef(false);
   const currentVideoIdRef = useRef(syncState.videoId);
+  const lastTimeRef = useRef(syncState.currentTime);
 
   const suppress = (ms = 800) => {
     suppressUntilRef.current = Date.now() + ms;
@@ -103,7 +106,8 @@ export default function YouTubePlayer({
         videoId: syncState.videoId,
         playerVars: {
           autoplay: syncState.playState === 'playing' ? 1 : 0,
-          controls: canControl ? 1 : 0,
+          controls: 1,
+          fs: 1,
           playsinline: 1,
           enablejsapi: 1,
           modestbranding: 1,
@@ -122,6 +126,21 @@ export default function YouTubePlayer({
           onStateChange: (event) => {
             if (isSuppressed()) return;
 
+            const curTime = playerRef.current && typeof playerRef.current.getCurrentTime === 'function'
+              ? playerRef.current.getCurrentTime()
+              : 0;
+
+            // Check if user manually jumped/seeked time (> 2s difference from last known time)
+            if (Math.abs(curTime - lastTimeRef.current) > 2) {
+              lastTimeRef.current = curTime;
+              if (canControlRef.current) {
+                suppress(1200);
+                onSeek?.(curTime);
+              }
+            } else {
+              lastTimeRef.current = curTime;
+            }
+
             if (event.data === window.YT.PlayerState.PLAYING) {
               if (canControlRef.current) {
                 suppress(1200);
@@ -136,13 +155,17 @@ export default function YouTubePlayer({
             } else if (event.data === window.YT.PlayerState.PAUSED) {
               if (canControlRef.current && playerRef.current) {
                 suppress(1200);
-                onPause(playerRef.current.getCurrentTime());
+                onPause(curTime);
               } else {
                 suppress();
                 if (syncState.playState === 'playing') {
                   playerRef.current?.playVideo();
                 }
                 onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
+              }
+            } else if (event.data === window.YT.PlayerState.ENDED) {
+              if (canControlRef.current) {
+                onEnded?.();
               }
             }
           },
@@ -193,27 +216,76 @@ export default function YouTubePlayer({
     <div className="yt-wrapper" style={{ width: '100%', height: '100%', position: 'relative' }}>
       <div ref={containerRef} className="yt-player-container" style={{ width: '100%', height: '100%' }} />
 
-      {needsUnmute && (
-        <div className="unmute-banner" onClick={handleUnmute}>
-          <span>🔊 Click anywhere to Unmute Audio & Sync</span>
-        </div>
-      )}
-
       {!canControl && (
         <div
-          className="viewer-click-shield"
-          onClick={() => {
+          className="viewer-block-shield"
+          style={{
+            position: 'absolute',
+            inset: 0,
+            zIndex: 99,
+            cursor: 'not-allowed',
+            background: 'transparent',
+            pointerEvents: 'auto',
+            touchAction: 'manipulation',
+          }}
+          onClick={(e) => {
+            e.stopPropagation();
             if (needsUnmute) {
               handleUnmute();
             } else {
               onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
             }
           }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            if (needsUnmute) {
+              handleUnmute();
+            } else {
+              onPermissionDenied?.('🔒 Only the Host or a Moderator can play or pause the video.');
+            }
+          }}
+          title="🔒 Only Host or Moderator can control playback"
+        />
+      )}
+
+      {needsUnmute && (
+        <div
+          className="unmute-banner"
+          onClick={handleUnmute}
+          onTouchEnd={handleUnmute}
+          style={{ zIndex: 100, touchAction: 'manipulation' }}
         >
-          <div className="viewer-overlay">
-            <span className="viewer-badge">👁 Viewer Mode</span>
-          </div>
+          <span>🔊 Tap anywhere to Unmute Audio & Sync</span>
         </div>
+      )}
+
+      {canControl && (
+        <button
+          className={`host-control-fab ${syncState.playState === 'playing' ? 'playing' : ''}`}
+          onClick={() => {
+            if (syncState.playState === 'playing') {
+              const currentTime = playerRef.current && typeof playerRef.current.getCurrentTime === 'function'
+                ? playerRef.current.getCurrentTime()
+                : syncState.currentTime;
+              onPause(currentTime);
+            } else {
+              onPlay();
+            }
+          }}
+          onTouchEnd={(e) => {
+            e.preventDefault();
+            if (syncState.playState === 'playing') {
+              const currentTime = playerRef.current && typeof playerRef.current.getCurrentTime === 'function'
+                ? playerRef.current.getCurrentTime()
+                : syncState.currentTime;
+              onPause(currentTime);
+            } else {
+              onPlay();
+            }
+          }}
+        >
+          {syncState.playState === 'playing' ? '⏸ Pause' : '▶ Play'}
+        </button>
       )}
     </div>
   );

@@ -44,71 +44,137 @@ const QUICK_PICKS = [
   { id: 'fJ9rUzIMcZQ', title: 'Queen – Bohemian Rhapsody' },
 ];
 
-export default function VideoSearch({ onSelect, onClose, canControl }) {
+export default function VideoSearch({ onSelect, onAddToQueue, onClose, canControl }) {
   const [input, setInput] = useState('');
   const [error, setError] = useState('');
 
-  const handleLoad = () => {
+  const handlePlayNow = (id) => {
     if (!canControl) return;
-    const id = extractVideoId(input);
-    if (!id) { setError("Couldn't parse a video ID — try pasting the full YouTube URL."); return; }
-    onSelect(id);
+    const targetId = id || extractVideoId(input);
+    if (!targetId) { setError("Couldn't parse a video ID — try pasting the full YouTube URL."); return; }
+    onSelect(targetId);
+  };
+
+  const handleQueue = async (id) => {
+    const targetId = id || extractVideoId(input);
+    if (!targetId) { setError("Couldn't parse a video ID — try pasting the full YouTube URL."); return; }
+    
+    const match = QUICK_PICKS.find(p => p.id === targetId);
+    let title = match ? match.title : '';
+
+    if (!title) {
+      try {
+        const res = await fetch(`https://noembed.com/embed?url=https://www.youtube.com/watch?v=${targetId}`);
+        const data = await res.json();
+        if (data && data.title) {
+          title = data.title;
+        }
+      } catch {
+        title = 'YouTube Video';
+      }
+    }
+
+    onAddToQueue(targetId, title || 'YouTube Video');
+    setInput('');
+    setError('');
   };
 
   return (
-    <div className="search-overlay" role="dialog" aria-modal="true" aria-label="Change video">
+    <div className="search-overlay" role="dialog" aria-modal="true" aria-label="Add or change video">
       <div className="search-modal">
         {/* Header */}
         <div className="search-header">
-          <h2 className="search-title gradient-text">Change Video</h2>
+          <h2 className="search-title gradient-text">Add Video</h2>
           <button id="close-search-btn" className="close-btn" onClick={onClose} aria-label="Close">✕</button>
         </div>
 
-        {!canControl ? (
-          <p className="no-perm-msg">🔒 Only the Host or a Moderator can change the video.</p>
-        ) : (
-          <>
-            {/* URL / ID input */}
-            <div className="search-input-row">
-              <input
-                id="video-url-input"
-                className="search-modal-input"
-                type="text"
-                placeholder="Paste a YouTube URL or video ID…"
-                value={input}
-                onChange={(e) => { setInput(e.target.value); setError(''); }}
-                onKeyDown={(e) => e.key === 'Enter' && handleLoad()}
-                autoFocus
+        {/* URL / ID input */}
+        <div className="search-input-row" style={{ flexWrap: 'wrap', gap: '8px' }}>
+          <input
+            id="video-url-input"
+            className="search-modal-input"
+            type="text"
+            placeholder="Paste a YouTube URL or video ID…"
+            value={input}
+            onChange={(e) => { setInput(e.target.value); setError(''); }}
+            onKeyDown={(e) => e.key === 'Enter' && handleQueue()}
+            autoFocus
+            style={{ flex: '1 1 200px' }}
+          />
+          
+          <button
+            id="queue-video-btn"
+            className="search-modal-btn"
+            onClick={() => handleQueue()}
+            style={{ background: 'linear-gradient(135deg, #10b981, #059669)', border: 'none' }}
+          >
+            + Add to Queue
+          </button>
+
+          {canControl && (
+            <button
+              id="load-video-btn"
+              className="search-modal-btn"
+              onClick={() => handlePlayNow()}
+            >
+              Play Now
+            </button>
+          )}
+        </div>
+
+        {error && <p className="error-msg" role="alert">{error}</p>}
+
+        {/* Quick-pick grid */}
+        <p className="suggestions-label">Quick picks</p>
+        <div className="suggestions-grid">
+          {QUICK_PICKS.map((v) => (
+            <div key={v.id} className="suggestion-card" style={{ position: 'relative' }}>
+              <img
+                src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`}
+                alt={v.title}
+                loading="lazy"
               />
-              <button id="load-video-btn" className="search-modal-btn" onClick={handleLoad}>
-                Load
-              </button>
-            </div>
-
-            {error && <p className="error-msg" role="alert">{error}</p>}
-
-            {/* Quick-pick grid */}
-            <p className="suggestions-label">Quick picks</p>
-            <div className="suggestions-grid">
-              {QUICK_PICKS.map((v) => (
+              <span>{v.title}</span>
+              
+              <div style={{ display: 'flex', gap: '4px', marginTop: '6px', width: '100%' }}>
                 <button
-                  key={v.id}
-                  id={`pick-${v.id}`}
-                  className="suggestion-card"
-                  onClick={() => onSelect(v.id)}
-                  title={v.title}
+                  onClick={() => handleQueue(v.id)}
+                  style={{
+                    flex: 1,
+                    padding: '4px 6px',
+                    fontSize: '0.75rem',
+                    background: 'rgba(16, 185, 129, 0.2)',
+                    border: '1px solid rgba(16, 185, 129, 0.4)',
+                    color: '#6ee7b7',
+                    borderRadius: '4px',
+                    cursor: 'pointer',
+                    fontWeight: 600,
+                  }}
                 >
-                  <img
-                    src={`https://img.youtube.com/vi/${v.id}/mqdefault.jpg`}
-                    alt={v.title}
-                    loading="lazy"
-                  />
-                  <span>{v.title}</span>
+                  + Queue
                 </button>
-              ))}
+                {canControl && (
+                  <button
+                    onClick={() => handlePlayNow(v.id)}
+                    style={{
+                      flex: 1,
+                      padding: '4px 6px',
+                      fontSize: '0.75rem',
+                      background: 'rgba(99, 102, 241, 0.2)',
+                      border: '1px solid rgba(99, 102, 241, 0.4)',
+                      color: '#a5b4fc',
+                      borderRadius: '4px',
+                      cursor: 'pointer',
+                      fontWeight: 600,
+                    }}
+                  >
+                    ▶ Play
+                  </button>
+                )}
+              </div>
             </div>
-          </>
-        )}
+          ))}
+        </div>
       </div>
     </div>
   );

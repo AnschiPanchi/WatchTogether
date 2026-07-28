@@ -14,6 +14,16 @@ const RoomSchema = new mongoose.Schema({
     currentTime: { type: Number, default: 0 },
     lastUpdatedAt: { type: Number, default: Date.now },
   },
+  queue: [
+    {
+      id: { type: String, required: true },
+      videoId: { type: String, required: true },
+      title: { type: String, default: '' },
+      addedBy: { type: String, default: '' },
+      addedByUsername: { type: String, default: '' },
+      timestamp: { type: Number, default: Date.now },
+    },
+  ],
   createdAt: {
     type: Date,
     default: Date.now,
