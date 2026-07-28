@@ -2,13 +2,14 @@ const express = require('express');
 const crypto = require('crypto');
 const jwt = require('jsonwebtoken');
 const UserModel = require('../models/UserModel');
-const { getIsConnected } = require('../config/db');
+const { ensureDBConnection } = require('../config/db');
 
 const router = express.Router();
 
 // ─── POST /api/auth/register ──────────────────────────────────────────────────
 router.post('/register', async (req, res) => {
-  if (!getIsConnected()) {
+  const isConnected = await ensureDBConnection();
+  if (!isConnected) {
     return res.status(503).json({ message: 'Database not available. Auth requires MongoDB.' });
   }
 
@@ -61,7 +62,8 @@ router.post('/register', async (req, res) => {
 
 // ─── POST /api/auth/login ─────────────────────────────────────────────────────
 router.post('/login', async (req, res) => {
-  if (!getIsConnected()) {
+  const isConnected = await ensureDBConnection();
+  if (!isConnected) {
     return res.status(503).json({ message: 'Database not available. Auth requires MongoDB.' });
   }
 
@@ -116,7 +118,8 @@ router.get('/get-me', async (req, res) => {
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    if (!getIsConnected()) {
+    const isConnected = await ensureDBConnection();
+    if (!isConnected) {
       return res.json({
         message: 'User fetched successfully',
         user: { username: decoded.username || 'User', email: decoded.email || '' },
